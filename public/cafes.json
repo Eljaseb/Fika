@@ -1,0 +1,14 @@
+[
+  { "id": 1, "name": "Hart Bageri", "city": "Copenhagen", "country": "Denmark", "handle": "@WorthTheFika", "scene": "Cozy interior", "imgs": null,
+    "drink": { "type": "Filter Coffee", "mod": "Single origin", "subtype": "", "temp": "Hot", "price": 42, "note": "Bright, clean, beautifully balanced.", "ratings": { "Taste": 5, "Clarity": 5, "Temperature": 4, "Body": 4 } },
+    "pastry": { "type": "Cardamom Bun", "subtype": "Cardamom", "mod": "", "temp": "Hot", "price": 38, "note": "Generous spice, just gooey enough.", "ratings": { "Flavour": 5, "Texture": 5, "Freshness": 5, "Gooeyness": 4 } },
+    "atmosphere": 4, "service": 5, "value": 4, "bestFor": ["Cozy solo", "Queer-friendly", "Hidden gem"], "reason": "Worth crossing the city for the bun alone.", "take": "The cardamom bun everyone whispers about. Believe them." },
+  { "id": 2, "name": "Prolog Coffee", "city": "Copenhagen", "country": "Denmark", "handle": "@WorthTheFika", "scene": "Sunny terrace", "imgs": null,
+    "drink": { "type": "Flat White", "mod": "Oat", "subtype": "", "temp": "Hot", "price": 48, "note": "Silky milk, punchy shot. Reference-grade.", "ratings": { "Taste": 5, "Milk texture": 5, "Temperature": 5, "Strength": 4 } },
+    "pastry": { "type": "Croissant", "subtype": "Pistachio", "mod": "", "temp": "Hot", "price": 52, "note": "Crisp shatter, rich pistachio centre.", "ratings": { "Flakiness": 5, "Butter": 4, "Freshness": 5, "Filling": 5 } },
+    "atmosphere": 4, "service": 4, "value": 4, "bestFor": ["Laptop work", "Friends"], "reason": "Best oat flat white in the city, full stop.", "take": "Come for the flat white, stay for that pistachio croissant." },
+  { "id": 3, "name": "Coffee Collective", "city": "Copenhagen", "country": "Denmark", "handle": "@WorthTheFika", "scene": "Nordic minimal", "imgs": null,
+    "drink": { "type": "Espresso", "mod": "Single origin", "subtype": "", "temp": "Hot", "price": 32, "note": "Syrupy, bright, world-class roastery.", "ratings": { "Taste": 5, "Crema": 5, "Body": 4, "Strength": 5 } },
+    "pastry": { "type": "", "subtype": "", "mod": "", "temp": "Hot", "price": 0, "note": "", "ratings": {} },
+    "atmosphere": 0, "service": 0, "value": 4, "bestFor": ["Hidden gem", "Cozy solo"], "reason": "A coffee-truck-style window — all about the cup.", "take": "No seating, no pastry, just possibly the best espresso in town." }
+]
