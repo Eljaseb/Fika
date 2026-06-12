@@ -255,10 +255,18 @@ export default function App() {
   const [nickInput, setNickInput] = useState("");
   const [wishlist, setWishlist] = useState(() => lsGet("fika_wish", []));
   const [pubCity, setPubCity] = useState("All");
+  const [adminKey, setAdminKey] = useState("");
   const fileRef = useRef(); const cardFileRef = useRef(); const canvasRef = useRef();
-  useEffect(() => { fetch("/cafes.json").then((r) => r.ok ? r.json() : null).then((d) => { if (Array.isArray(d) && d.length) setReviews(d.map((r) => ({ ...r, imgs: r.imgs || newImgs() }))); }).catch(() => {}); }, []);
-  const exportData = () => { const blob = new Blob([JSON.stringify(reviews, null, 2)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "cafes.json"; a.click(); URL.revokeObjectURL(a.href); flash("cafes.json downloaded — re-upload to publish"); };
-  const tryUnlock = () => { if (code.trim() === ADMIN_CODE) { setMode("admin"); setGate(false); setCode(""); flash("Admin unlocked ✦"); } else flash("Wrong code"); };
+  useEffect(() => {
+    const norm = (d) => d.map((r) => ({ ...r, imgs: r.imgs || newImgs() }));
+    fetch("/.netlify/functions/cafes").then((r) => r.ok ? r.json() : null).then((d) => {
+      if (Array.isArray(d) && d.length) { setReviews(norm(d)); return; }
+      return fetch("/cafes.json").then((r) => r.ok ? r.json() : null).then((d2) => { if (Array.isArray(d2) && d2.length) setReviews(norm(d2)); });
+    }).catch(() => {});
+  }, []);
+  const exportData = () => { const blob = new Blob([JSON.stringify(reviews, null, 2)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "cafes.json"; a.click(); URL.revokeObjectURL(a.href); flash("Backup downloaded (cafes.json)"); };
+  const publish = async () => { setBusy("Publishing…"); try { const res = await fetch("/.netlify/functions/cafes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: adminKey || ADMIN_CODE, cafes: reviews }) }); const j = await res.json().catch(() => ({})); setBusy(""); if (res.ok) flash("Published ✓ everyone can see it now"); else if (j.error === "unauthorized") flash("Publish failed — admin code not set on server"); else flash("Publish failed — is the site deployed with Blobs?"); } catch { setBusy(""); flash("Publish failed — deploy the site first"); } };
+  const tryUnlock = () => { const k = code.trim(); if (k === ADMIN_CODE) { setAdminKey(k); setMode("admin"); setGate(false); setCode(""); flash("Admin unlocked ✦"); } else flash("Wrong code"); };
 
   const flash = (m) => { setToast(m); setTimeout(() => setToast(""), 1600); };
   const setNick = (val) => { const v = (val || "").trim(); if (!v) return; setNickname(v); lsSet("fika_nick", v); };
@@ -429,7 +437,8 @@ export default function App() {
       <div style={{ padding: "8px 18px 0", display: "flex", gap: 8, alignItems: "center" }}>
         {mode === "admin" ? (<>
           <span style={{ fontFamily: sans, fontSize: 11, fontWeight: 800, letterSpacing: 1, color: C.green, background: "rgba(94,123,82,0.14)", padding: "5px 10px", borderRadius: 20 }}>● ADMIN</span>
-          <button onClick={exportData} style={{ ...ghostBtn, padding: "7px 12px", width: "auto", fontSize: 12 }}>⬇ Export data</button>
+          <button onClick={publish} style={{ ...ghostBtn, padding: "7px 12px", width: "auto", fontSize: 12, color: "#fff", background: "linear-gradient(135deg," + C.green + ",#3f5a34)" }}>⬆ Publish</button>
+          <button onClick={exportData} style={{ ...ghostBtn, padding: "7px 12px", width: "auto", fontSize: 12 }}>⬇ Backup</button>
           <button onClick={() => setMode("public")} style={{ ...ghostBtn, padding: "7px 12px", width: "auto", fontSize: 12 }}>Exit admin</button>
         </>) : (
           <button onClick={() => setGate(true)} style={{ ...ghostBtn, padding: "7px 12px", width: "auto", fontSize: 12, color: C.inkSoft }}>🔒 Admin</button>
