@@ -192,6 +192,8 @@ const AI_ENDPOINT = (import.meta && import.meta.env && import.meta.env.VITE_AI_E
 const PLACES_ENDPOINT = (import.meta && import.meta.env && import.meta.env.VITE_PLACES_ENDPOINT) || "/.netlify/functions/places";
 const ADMIN_CODE = (import.meta && import.meta.env && import.meta.env.VITE_ADMIN_CODE) || "fika-admin";
 const mapsUrl = (d) => "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent([d.name, d.city, d.country].filter(Boolean).join(" "));
+const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 async function callClaude(messages, system) { const ctrl = new AbortController(); const t = setTimeout(() => ctrl.abort(), 30000); let res; try { res = await fetch(AI_ENDPOINT, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages, system }), signal: ctrl.signal }); } finally { clearTimeout(t); } if (!res.ok) throw new Error("HTTP " + res.status); const data = await res.json(); return (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n"); }
 const parseJSON = (t) => { try { return JSON.parse((t || "").replace(/```json|```/g, "").trim()); } catch { return null; } };
 
@@ -249,12 +251,18 @@ export default function App() {
   const [gate, setGate] = useState(false);
   const [code, setCode] = useState("");
   const [place, setPlace] = useState(null);
+  const [nickname, setNickname] = useState(() => lsGet("fika_nick", ""));
+  const [nickInput, setNickInput] = useState("");
+  const [wishlist, setWishlist] = useState(() => lsGet("fika_wish", []));
+  const [pubCity, setPubCity] = useState("All");
   const fileRef = useRef(); const cardFileRef = useRef(); const canvasRef = useRef();
   useEffect(() => { fetch("/cafes.json").then((r) => r.ok ? r.json() : null).then((d) => { if (Array.isArray(d) && d.length) setReviews(d.map((r) => ({ ...r, imgs: r.imgs || newImgs() }))); }).catch(() => {}); }, []);
   const exportData = () => { const blob = new Blob([JSON.stringify(reviews, null, 2)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "cafes.json"; a.click(); URL.revokeObjectURL(a.href); flash("cafes.json downloaded — re-upload to publish"); };
   const tryUnlock = () => { if (code.trim() === ADMIN_CODE) { setMode("admin"); setGate(false); setCode(""); flash("Admin unlocked ✦"); } else flash("Wrong code"); };
 
   const flash = (m) => { setToast(m); setTimeout(() => setToast(""), 1600); };
+  const setNick = (val) => { const v = (val || "").trim(); if (!v) return; setNickname(v); lsSet("fika_nick", v); };
+  const toggleWish = (id) => setWishlist((w) => { const x = w.includes(id) ? w.filter((i) => i !== id) : [...w, id]; lsSet("fika_wish", x); return x; });
   const s = overall(draft); const v = verdictFor(s); const complete = draft.name && s != null;
   const toggleCap = (arr, val, max) => arr.includes(val) ? arr.filter((x) => x !== val) : arr.length < max ? [...arr, val] : (flash(`Max ${max}`), arr);
 
@@ -280,7 +288,8 @@ export default function App() {
 
   const lenses = useMemo(() => { const dt = new Set(), pt = new Set(), bf = new Set(); reviews.forEach((r) => { if (r.drink?.type) dt.add(r.drink.type); if (r.pastry?.type) pt.add(r.pastry.type); (r.bestFor || []).forEach((b) => bf.add(b)); }); const L = [{ key: "atmo", title: "Best Atmosphere", sub: "Ranked by vibe score", kind: "atmo" }]; [...dt].forEach((t) => L.push({ key: "d:" + t, title: `Best ${t}s`, sub: "Ranked by drink score", kind: "drink", t })); [...pt].forEach((t) => L.push({ key: "p:" + t, title: `Top ${t}s`, sub: "Ranked by pastry score", kind: "pastry", t })); [...bf].forEach((b) => L.push({ key: "b:" + b, title: `Best ${b} Cafés`, sub: "Ranked by Fika Score", kind: "bf", t: b })); return L; }, [reviews]);
   const lensList = useMemo(() => { if (!lens) return []; return reviews.map((r) => { if (lens.kind === "drink" && r.drink?.type === lens.t) { const dd = itemDisplay(r.drink, "drink"); return { name: r.name, sub: dd.paren, city: r.city, score: itemScore(r.drink, "drink") }; } if (lens.kind === "pastry" && r.pastry?.type === lens.t) { const pd = itemDisplay(r.pastry, "pastry"); return { name: r.name, sub: pd.paren, city: r.city, score: itemScore(r.pastry, "pastry") }; } if (lens.kind === "bf" && (r.bestFor || []).includes(lens.t)) return { name: r.name, sub: "", city: r.city, score: overall(r) }; if (lens.kind === "atmo") return { name: r.name, sub: r.scene, city: r.city, score: vibeScore(r) }; return null; }).filter((x) => x && x.score != null).sort((a, b) => b.score - a.score); }, [lens, reviews]);
-  const shown = useMemo(() => reviews.filter((r) => { const m = (r.name + r.city + r.country).toLowerCase().includes(q.toLowerCase()); const sc = overall(r); const f = filt === "All" || (filt === "≥8.0" && sc >= 8) || (filt === "Worth the trip" && sc >= 8) || (r.bestFor || []).includes(filt); return m && f; }), [reviews, q, filt]);
+  const cities = useMemo(() => ["All", ...Array.from(new Set(reviews.map((r) => r.city).filter(Boolean)))], [reviews]);
+  const shown = useMemo(() => reviews.filter((r) => { const m = (r.name + r.city + r.country).toLowerCase().includes(q.toLowerCase()); const sc = overall(r); const f = filt === "All" || (filt === "≥8.0" && sc >= 8) || (filt === "Worth the trip" && sc >= 8) || (filt === "❤️ Wishlist" && wishlist.includes(r.id)) || (r.bestFor || []).includes(filt); const cityOk = pubCity === "All" || r.city === pubCity; return m && f && cityOk; }), [reviews, q, filt, pubCity, wishlist]);
 
   /* ── CARD ── */
   if (card) {
@@ -308,7 +317,7 @@ export default function App() {
             <div style={{ margin: "0 auto 14px", maxWidth: 344 }}><CardCanvas data={card.lb ? null : cardData} list={lensList} handle={handle} title={card.lb ? lens.title : ""} sub={card.lb ? lens.sub : ""} kind={card.lb ? "leaderboard" : "review"} ctype={ctype} fmt={card.lb ? "reel" : fmt} onReady={(cv) => (canvasRef.current = cv)} /></div>
           )}
 
-          {!card.lb && !editing && (
+          {mode === "admin" && !card.lb && !editing && (
             <>
               {mode === "admin" && (<>
               <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
@@ -324,10 +333,12 @@ export default function App() {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 7, marginBottom: 16 }}>{Object.entries(FORMATS).map(([k, f]) => <button key={k} onClick={() => setFmt(k)} style={{ padding: "10px 4px", borderRadius: 12, border: "none", cursor: "pointer", background: fmt === k ? C.ink : "rgba(255,255,255,0.55)", color: fmt === k ? C.cream : C.inkSoft, fontFamily: sans, fontWeight: 700, fontSize: 12, boxShadow: fmt === k ? "none" : "inset 0 0 0 1px " + C.line }}>{f.label}<div style={{ fontSize: 10, opacity: 0.6 }}>{f.sub}</div></button>)}</div>
             </>
           )}
-          {!editing && <button onClick={exportPNG} style={ctaBtn}>⬇  Save {ctype !== "hero" && !card.lb ? ctype + " " : ""}card to Photos · 4K</button>}
+          {mode === "admin" && !editing && <button onClick={exportPNG} style={ctaBtn}>⬇  Save {ctype !== "hero" && !card.lb ? ctype + " " : ""}card to Photos · 4K</button>}
           {mode === "admin" && !card.lb && !editing && <button onClick={exportAll} style={{ ...ghostBtn, marginTop: 10 }}>⬇⬇  Export all 4 cards to Photos</button>}
-          {!card.lb && !editing && <button onClick={copyCaption} style={{ ...ghostBtn, marginTop: 10 }}>📋  Copy caption + hashtags</button>}
-          {!card.lb && !editing && cardData && <InfoPanel d={cardData} place={place} setPlace={setPlace} />}
+          {mode === "admin" && !card.lb && !editing && <button onClick={copyCaption} style={{ ...ghostBtn, marginTop: 10 }}>📋  Copy caption + hashtags</button>}
+          {mode === "admin" && !card.lb && !editing && cardData && <button onClick={() => { setDraft({ ...cardData }); setCard(null); setTab("edit"); }} style={{ ...ghostBtn, marginTop: 10 }}>✏️ Edit this café</button>}
+          {mode !== "admin" && !card.lb && !editing && cardData && <button onClick={() => toggleWish(cardData.id)} style={{ ...ctaBtn, marginTop: 4, background: wishlist.includes(cardData.id) ? "linear-gradient(135deg,#B0432E,#7e2f1f)" : "linear-gradient(135deg," + C.clay + "," + C.clayDeep + ")" }}>{wishlist.includes(cardData.id) ? "❤️ In your wishlist" : "🤍 Add to wishlist"}</button>}
+          {!card.lb && !editing && cardData && <InfoPanel d={cardData} />}
           {busy && <Toast>{busy}</Toast>}
           {saveSheet && (
             <div onClick={() => setSaveSheet(null)} style={{ position: "fixed", inset: 0, background: "rgba(20,12,6,0.55)", zIndex: 350, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
@@ -405,7 +416,16 @@ export default function App() {
   /* ── HOME ── */
   return (
     <Shell>
-      <div style={{ padding: "26px 18px 6px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}><div><div style={{ fontFamily: sans, fontSize: 12, fontWeight: 800, letterSpacing: 2, color: C.clay }}>☕ FIKA REVIEWS</div><h1 style={{ fontFamily: serif, fontWeight: 700, fontSize: 32, color: C.ink, margin: "2px 0 0" }}>{mode === "admin" ? "Your cafés" : "Café guide"}</h1><div style={{ fontFamily: sans, fontSize: 12, fontWeight: 700, color: C.inkSoft, marginTop: 2 }}>☕ {reviews.length} cafés reviewed · Trusted Fika Curator</div></div><input value={handle} onChange={(e) => setHandle(e.target.value)} style={{ ...inputS, width: 110, fontSize: 13, textAlign: "right", padding: "8px 10px" }} /></div>
+      {mode !== "admin" && !nickname && (
+        <div style={{ position: "fixed", inset: 0, background: "linear-gradient(160deg,#3C2716,#160C05)", zIndex: 400, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 28, textAlign: "center" }}>
+          <div style={{ fontSize: 44 }}>☕</div>
+          <h1 style={{ fontFamily: serif, fontWeight: 700, fontSize: 30, color: C.cream, margin: "10px 0 6px" }}>Welcome to WorthTheFika</h1>
+          <p style={{ fontFamily: sans, fontSize: 14, color: "rgba(251,245,234,0.72)", maxWidth: 300, margin: "0 0 20px" }}>A cosy guide to the best cafés & fika. Pick a nickname to save your wishlist.</p>
+          <input value={nickInput} onChange={(e) => setNickInput(e.target.value)} placeholder="Your nickname" onKeyDown={(e) => e.key === "Enter" && setNick(nickInput)} style={{ ...inputS, width: "100%", maxWidth: 300, marginBottom: 12, textAlign: "center" }} />
+          <button onClick={() => setNick(nickInput)} style={{ ...ctaBtn, maxWidth: 300 }}>Enjoy your fika →</button>
+        </div>
+      )}
+      <div style={{ padding: "26px 18px 6px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}><div><div style={{ fontFamily: sans, fontSize: 12, fontWeight: 800, letterSpacing: 2, color: C.clay }}>☕ FIKA REVIEWS</div><h1 style={{ fontFamily: serif, fontWeight: 700, fontSize: 32, color: C.ink, margin: "2px 0 0" }}>{mode === "admin" ? "Your cafés" : "Café guide"}</h1><div style={{ fontFamily: sans, fontSize: 12, fontWeight: 700, color: C.inkSoft, marginTop: 2 }}>☕ {reviews.length} cafés reviewed · Trusted Fika Curator</div></div>{mode === "admin" ? <input value={handle} onChange={(e) => setHandle(e.target.value)} style={{ ...inputS, width: 110, fontSize: 13, textAlign: "right", padding: "8px 10px" }} /> : <button onClick={() => setNickname("")} style={{ ...ghostBtn, width: "auto", padding: "8px 12px", fontSize: 12 }}>{nickname ? "Hej, " + nickname : "Set nickname"}</button>}</div>
       <div style={{ padding: "8px 18px 0", display: "flex", gap: 8, alignItems: "center" }}>
         {mode === "admin" ? (<>
           <span style={{ fontFamily: sans, fontSize: 11, fontWeight: 800, letterSpacing: 1, color: C.green, background: "rgba(94,123,82,0.14)", padding: "5px 10px", borderRadius: 20 }}>● ADMIN</span>
@@ -425,10 +445,10 @@ export default function App() {
           </div>
         </div>
       )}
-      <div style={{ padding: "10px 18px 0" }}><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="🔍 Search cafés, cities…" style={{ ...inputS, width: "100%", marginBottom: 10 }} /><div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8 }}>{["All", "≥8.0", "Hidden gem", "Queer-friendly", "Laptop work", "Worth the trip"].map((f) => <Chip key={f} active={filt === f} onClick={() => setFilt(f)}>{f}</Chip>)}</div></div>
+      <div style={{ padding: "10px 18px 0" }}><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="🔍 Search cafés, cities…" style={{ ...inputS, width: "100%", marginBottom: 10 }} /><div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8 }}>{["All", "≥8.0", "Hidden gem", "Queer-friendly", "Laptop work", "Worth the trip", ...(mode !== "admin" ? ["❤️ Wishlist"] : [])].map((f) => <Chip key={f} active={filt === f} onClick={() => setFilt(f)}>{f}</Chip>)}</div>{cities.length > 1 && <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8 }}>{cities.map((c) => <Chip key={c} active={pubCity === c} onClick={() => setPubCity(c)}>{c === "All" ? "📍 All cities" : "📍 " + c}</Chip>)}</div>}</div>
       <div style={{ padding: "8px 18px 130px" }}>{shown.map((r) => { const sc = overall(r); const vd = verdictFor(sc); const dd = itemDisplay(r.drink, "drink"), pd = itemDisplay(r.pastry, "pastry"); const cur = curOf(r.country); return (
         <div key={r.id} onClick={() => openCard(r)} style={{ borderRadius: 22, overflow: "hidden", marginBottom: 16, cursor: "pointer", background: C.cream, boxShadow: "0 10px 28px rgba(40,24,10,0.12)" }}>
-          <div style={{ height: 132, position: "relative", background: "linear-gradient(135deg,#CBA079,#6F4A30)" }}>{r.imgs?.hero?.src && <img src={r.imgs.hero.src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}<div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg,rgba(0,0,0,0.28),transparent 45%)" }} /><div style={{ position: "absolute", left: 12, top: 12, display: "flex", gap: 6 }}><span style={{ background: vd.color, color: "#fff", fontFamily: sans, fontWeight: 800, fontSize: 11, padding: "5px 11px", borderRadius: 20 }}>{vd.emoji} {vd.label}</span>{r.scene && <span style={{ background: "rgba(15,9,4,0.5)", color: "#fff", fontFamily: sans, fontWeight: 700, fontSize: 11, padding: "5px 11px", borderRadius: 20 }}>{sceneEmoji(r.scene)} {r.scene}</span>}</div><div style={{ position: "absolute", right: 14, bottom: -24, width: 60, height: 60, borderRadius: "50%", background: C.creamHi, border: `2px solid ${C.gold}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 6px 16px rgba(40,24,10,0.25)" }}><span style={{ fontFamily: serif, fontWeight: 700, fontSize: 22, color: C.ink }}>{sc?.toFixed(1)}</span></div></div>
+          <div style={{ height: 132, position: "relative", background: "linear-gradient(135deg,#CBA079,#6F4A30)" }}>{r.imgs?.hero?.src && <img src={r.imgs.hero.src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />}<div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg,rgba(0,0,0,0.28),transparent 45%)" }} /><div style={{ position: "absolute", left: 12, top: 12, display: "flex", gap: 6 }}><span style={{ background: vd.color, color: "#fff", fontFamily: sans, fontWeight: 800, fontSize: 11, padding: "5px 11px", borderRadius: 20 }}>{vd.emoji} {vd.label}</span>{r.scene && <span style={{ background: "rgba(15,9,4,0.5)", color: "#fff", fontFamily: sans, fontWeight: 700, fontSize: 11, padding: "5px 11px", borderRadius: 20 }}>{sceneEmoji(r.scene)} {r.scene}</span>}</div>{mode !== "admin" && <button onClick={(e) => { e.stopPropagation(); toggleWish(r.id); }} style={{ position: "absolute", right: 12, top: 12, width: 40, height: 40, borderRadius: "50%", border: "none", cursor: "pointer", background: "rgba(15,9,4,0.5)", fontSize: 18, lineHeight: 1 }}>{wishlist.includes(r.id) ? "❤️" : "🤍"}</button>}<div style={{ position: "absolute", right: 14, bottom: -24, width: 60, height: 60, borderRadius: "50%", background: C.creamHi, border: `2px solid ${C.gold}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 6px 16px rgba(40,24,10,0.25)" }}><span style={{ fontFamily: serif, fontWeight: 700, fontSize: 22, color: C.ink }}>{sc?.toFixed(1)}</span></div></div>
           <div style={{ padding: "16px" }}><div style={{ fontFamily: serif, fontWeight: 700, fontSize: 22, color: C.ink, lineHeight: 1.1 }}>{r.name}</div><div style={{ fontFamily: sans, fontSize: 12, fontWeight: 600, color: C.inkSoft, marginBottom: 10 }}>📍 {r.city}, {r.country} {flagOf(r.country)}</div><div style={{ display: "flex", flexDirection: "column", gap: 4 }}>{dd && <ItemLine emoji="☕" name={dd.name} paren={dd.paren} score={itemScore(r.drink, "drink")} price={r.drink.price} cur={cur} />}{pd && <ItemLine emoji="🥐" name={pd.name} paren={pd.paren} score={itemScore(r.pastry, "pastry")} price={r.pastry.price} cur={cur} />}</div>{r.take && <div style={{ fontFamily: serif, fontStyle: "italic", fontSize: 14, color: C.clay, marginTop: 10 }}>“{r.take}”</div>}</div>
         </div>); })}{!shown.length && <p style={{ fontFamily: sans, color: C.inkSoft, textAlign: "center", marginTop: 30 }}>No cafés match that filter.</p>}</div>
       <Nav tab={tab} setTab={setTab} admin={mode === "admin"} onNew={() => { setDraft(blank()); setTab("edit"); }} />
@@ -438,8 +458,20 @@ export default function App() {
 }
 
 function AiRow({ label, value, onApply, applyLabel }) { if (!value) return null; return <div style={aiCard}><div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><div style={aiLbl}>{label}</div><button onClick={onApply} style={miniBtn}>{applyLabel}</button></div><div style={{ fontFamily: serif, fontSize: 16, color: C.ink, marginTop: 6, fontStyle: label === "Caption" ? "normal" : "italic" }}>{value}</div></div>; }
-function InfoPanel({ d, place, setPlace }) {
-  useEffect(() => { let on = true; setPlace(null); const q = [d.name, d.city, d.country].filter(Boolean).join(" "); fetch(PLACES_ENDPOINT + "?q=" + encodeURIComponent(q)).then((r) => r.ok ? r.json() : null).then((j) => { if (on) setPlace(j || { configured: false }); }).catch(() => { if (on) setPlace({ configured: false }); }); return () => { on = false; }; }, [d.id]);
+function InfoPanel({ d }) {
+  const [place, setPlace] = useState(null);
+  const [sum, setSum] = useState(null);
+  useEffect(() => { let on = true; setPlace(null); setSum(null); const q = [d.name, d.city, d.country].filter(Boolean).join(" "); fetch(PLACES_ENDPOINT + "?q=" + encodeURIComponent(q)).then((r) => r.ok ? r.json() : null).then((j) => { if (on) setPlace(j || { configured: false }); }).catch(() => { if (on) setPlace({ configured: false }); }); return () => { on = false; }; }, [d.id]);
+  const summarize = async () => {
+    setSum({ loading: true });
+    try {
+      const revs = (place && place.reviews) || [];
+      const ctx = "Café: " + d.name + ", " + d.city + ". Google rating: " + (place && place.rating != null ? place.rating : "n/a") + " from " + (place && place.total != null ? place.total : "?") + " reviews.\nRecent Google reviews:\n" + revs.map((r, i) => (i + 1) + ". (" + r.rating + " stars) " + r.text).join("\n");
+      const txt = await callClaude([{ role: "user", content: ctx + "\n\nSummarise what Google reviewers actually say about this café into a fun emoji-led breakdown for a cosy Nordic café guide. Be faithful; do not invent. Return ONLY JSON: {\"headline\":\"one warm 6-10 word verdict\",\"categories\":[{\"emoji\":\"a fitting emoji\",\"label\":\"Coffee\",\"verdict\":\"short phrase\"}]} covering any of Coffee, Pastry, Vibe, Service, Value that the reviews mention; pick a fitting emoji per category; each verdict under 8 words." }], "You faithfully summarise real user reviews. Output strictly valid JSON, no markdown, no preamble.");
+      const j = JSON.parse((txt || "").replace(/```json|```/g, "").trim());
+      setSum({ cats: j.categories || [], headline: j.headline || "" });
+    } catch (e) { setSum({ err: "Couldn’t summarise yet — this needs the AI + Google keys set in Netlify." }); }
+  };
   return (
     <div style={{ marginTop: 18, background: "rgba(255,255,255,0.55)", borderRadius: 18, padding: 16, boxShadow: "inset 0 0 0 1px " + C.line }}>
       <div style={{ fontFamily: sans, fontSize: 12, fontWeight: 800, letterSpacing: 1, color: C.clay, marginBottom: 8 }}>📍 LOCATION</div>
@@ -449,9 +481,16 @@ function InfoPanel({ d, place, setPlace }) {
       <div style={{ fontFamily: sans, fontSize: 12, fontWeight: 800, letterSpacing: 1, color: C.clay, margin: "4px 0 8px" }}>💬 HOW OTHERS REVIEW IT</div>
       {!place && <div style={{ fontFamily: sans, fontSize: 13, color: C.inkSoft }}>Loading…</div>}
       {place && place.configured && place.found && (<>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 12 }}><span style={{ fontFamily: serif, fontWeight: 700, fontSize: 30, color: C.gold }}>{place.rating != null ? place.rating.toFixed(1) : "–"}</span><span style={{ fontFamily: sans, fontSize: 13, color: C.inkSoft }}>on Google · {place.total} reviews</span></div>
-        {(place.reviews || []).map((rv, i) => (<div key={i} style={{ marginBottom: 10, paddingBottom: 10, borderBottom: i < place.reviews.length - 1 ? "1px solid " + C.line : "none" }}><div style={{ fontFamily: sans, fontWeight: 700, fontSize: 13, color: C.ink }}>{"★".repeat(Math.round(rv.rating || 0))} <span style={{ color: C.inkSoft, fontWeight: 600 }}>{rv.author} · {rv.time}</span></div><div style={{ fontFamily: serif, fontSize: 14, color: C.ink, marginTop: 3, lineHeight: 1.4 }}>{rv.text}</div></div>))}
-        <div style={{ fontFamily: sans, fontSize: 11, color: C.inkSoft }}>Ratings &amp; reviews via Google</div>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 10 }}><span style={{ fontFamily: serif, fontWeight: 700, fontSize: 30, color: C.gold }}>{place.rating != null ? place.rating.toFixed(1) : "–"}</span><span style={{ fontFamily: sans, fontSize: 13, color: C.inkSoft }}>on Google · {place.total} reviews</span></div>
+        {!sum && <button onClick={summarize} style={{ ...ctaBtn, marginBottom: 6 }}>✨ Fika-style summary of the reviews</button>}
+        {sum && sum.loading && <div style={{ fontFamily: sans, fontSize: 13, color: C.inkSoft, padding: "8px 0" }}>Reading the reviews…</div>}
+        {sum && sum.err && <div style={{ fontFamily: sans, fontSize: 13, color: C.red, marginBottom: 8 }}>{sum.err}</div>}
+        {sum && sum.cats && (<div style={{ marginBottom: 8 }}>
+          {sum.headline && <div style={{ fontFamily: serif, fontStyle: "italic", fontSize: 16, color: C.ink, marginBottom: 10 }}>“{sum.headline}”</div>}
+          {sum.cats.map((c, i) => (<div key={i} style={{ display: "flex", gap: 10, alignItems: "baseline", padding: "7px 0", borderBottom: i < sum.cats.length - 1 ? "1px solid " + C.line : "none" }}><span style={{ fontSize: 20 }}>{c.emoji}</span><span style={{ fontFamily: sans, fontWeight: 700, fontSize: 13, color: C.ink, width: 78 }}>{c.label}</span><span style={{ fontFamily: serif, fontSize: 14, color: C.inkSoft, flex: 1 }}>{c.verdict}</span></div>))}
+          <div style={{ fontFamily: sans, fontSize: 11, color: C.inkSoft, marginTop: 8 }}>Summarised by AI from Google reviews · sample limited to what Google shares</div>
+        </div>)}
+        <a href={mapsUrl(d)} target="_blank" rel="noreferrer" style={{ ...ghostBtn, display: "block", textAlign: "center", textDecoration: "none", marginTop: 6 }}>⭐  Read all reviews on Google</a>
       </>)}
       {place && (!place.configured || !place.found) && (<div><p style={{ fontFamily: sans, fontSize: 13, color: C.inkSoft, margin: "0 0 10px" }}>{place.configured ? "No Google match for this café yet." : "Live Google ratings aren’t connected yet."} See everyone’s reviews on Google:</p><a href={mapsUrl(d)} target="_blank" rel="noreferrer" style={{ ...ghostBtn, display: "block", textAlign: "center", textDecoration: "none" }}>⭐  See Google reviews</a></div>)}
     </div>

@@ -1,3 +1,14 @@
+# Fika Reviews — v2 (public guide + private admin)
+
+New in this version:
+- **Public app for your IG followers:** first-time visitors get a "Welcome to WorthTheFika"
+  screen and pick a **nickname** (saved on their device — no login). They browse your
+  reviews, filter by **city**, and build a **❤️ wishlist** (heart). No download/edit tools.
+- **AI summary of Google reviews:** on each café, an "✨ Fika-style summary" turns the
+  Google reviews into a fun emoji category breakdown (☕🥐🛋️🤍💰). Needs the AI + Google keys.
+- **Admin (only you, behind your code):** add **and now edit** any café (✏️ Edit this café),
+  upload photos, and download cards in every format for IG. Public never sees admin tools.
+
 # Fika Reviews
 
 Premium café-review card generator with a public guide + private admin.
