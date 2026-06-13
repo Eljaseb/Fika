@@ -1,20 +1,30 @@
-# Fika Reviews — Publish & shared data
+# Fika Reviews — Vercel build (Vercel Blob)
 
-Your cafés are now **shared with everyone** via Netlify Blobs (built in — no database account).
+Deployed on **Vercel**. Shared café data is stored in **Vercel Blob** and the
+serverless code lives in `api/` (Vercel API routes).
 
-How it works:
-- Visitors load the published cafés automatically (the app reads `/.netlify/functions/cafes`).
-- As admin you edit your list, and when happy you tap **⬆ Publish** — that saves the whole
-  list to the shared store, and every visitor sees it on their next open/refresh.
-- **⬇ Backup** still downloads a `cafes.json` copy for your own safety.
+How publish works:
+- Visitors load published cafés from `/api/cafes` (GET) — reads the latest Blob.
+- Admin taps **⬆ Publish** → POST to `/api/cafes` → saves the whole list to Vercel Blob
+  (a uniquely-named file each time; older versions are cleaned up automatically).
+- Everyone sees the update on their next open/refresh.
 
-IMPORTANT — set TWO env vars to the SAME value in Netlify (Site settings → Environment variables):
-- `VITE_ADMIN_CODE` — the code you type to unlock admin (used when the site is built).
-- `ADMIN_CODE` — the same code, checked on the server so only you can Publish.
-Redeploy after setting them. (Netlify Blobs needs no setup — it's automatic on deploy.)
+Environment variables (Vercel → Project → Settings → Environment Variables) — redeploy after setting:
+- `VITE_ADMIN_CODE` and `ADMIN_CODE` — set BOTH to the SAME code (client unlock + server publish check).
+- `ANTHROPIC_API_KEY` — AI review summary.
+- `GOOGLE_MAPS_API_KEY` — live Google ratings/reviews (Places API + billing).
+- `BLOB_READ_WRITE_TOKEN` — added automatically when you connect a Blob store
+  (Project → Storage → connect/create Blob). `BLOB_STORE_ID` isn't needed by the code —
+  the token is what the SDK uses.
+
+API routes:
+- `api/cafes.js`     — shared store (GET published list / POST publish)  · uses @vercel/blob
+- `api/anthropic.js` — AI proxy
+- `api/places.js`    — Google Places proxy
 
 Note: café photos are stored inside the published data, so a very large list can get heavy.
-For lots of cafés, moving photos to dedicated storage (Supabase/Netlify) is the later upgrade.
+For lots of cafés, moving photos to dedicated Blob files is the later upgrade.
+
 
 # Fika Reviews — v2 (public guide + private admin)
 

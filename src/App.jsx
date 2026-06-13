@@ -188,8 +188,8 @@ function CropView({ cfg, aspect, onChange }) {
 }
 
 /* ════ AI ════ */
-const AI_ENDPOINT = (import.meta && import.meta.env && import.meta.env.VITE_AI_ENDPOINT) || "/.netlify/functions/anthropic";
-const PLACES_ENDPOINT = (import.meta && import.meta.env && import.meta.env.VITE_PLACES_ENDPOINT) || "/.netlify/functions/places";
+const AI_ENDPOINT = (import.meta && import.meta.env && import.meta.env.VITE_AI_ENDPOINT) || "/api/anthropic";
+const PLACES_ENDPOINT = (import.meta && import.meta.env && import.meta.env.VITE_PLACES_ENDPOINT) || "/api/places";
 const ADMIN_CODE = (import.meta && import.meta.env && import.meta.env.VITE_ADMIN_CODE) || "fika-admin";
 const mapsUrl = (d) => "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent([d.name, d.city, d.country].filter(Boolean).join(" "));
 const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } };
@@ -259,13 +259,13 @@ export default function App() {
   const fileRef = useRef(); const cardFileRef = useRef(); const canvasRef = useRef();
   useEffect(() => {
     const norm = (d) => d.map((r) => ({ ...r, imgs: r.imgs || newImgs() }));
-    fetch("/.netlify/functions/cafes").then((r) => r.ok ? r.json() : null).then((d) => {
+    fetch("/api/cafes").then((r) => r.ok ? r.json() : null).then((d) => {
       if (Array.isArray(d) && d.length) { setReviews(norm(d)); return; }
       return fetch("/cafes.json").then((r) => r.ok ? r.json() : null).then((d2) => { if (Array.isArray(d2) && d2.length) setReviews(norm(d2)); });
     }).catch(() => {});
   }, []);
   const exportData = () => { const blob = new Blob([JSON.stringify(reviews, null, 2)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "cafes.json"; a.click(); URL.revokeObjectURL(a.href); flash("Backup downloaded (cafes.json)"); };
-  const publish = async () => { setBusy("Publishing…"); try { const res = await fetch("/.netlify/functions/cafes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: adminKey || ADMIN_CODE, cafes: reviews }) }); const j = await res.json().catch(() => ({})); setBusy(""); if (res.ok) flash("Published ✓ everyone can see it now"); else if (j.error === "unauthorized") flash("Publish failed — admin code not set on server"); else flash("Publish failed — is the site deployed with Blobs?"); } catch { setBusy(""); flash("Publish failed — deploy the site first"); } };
+  const publish = async () => { setBusy("Publishing…"); try { const res = await fetch("/api/cafes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: adminKey || ADMIN_CODE, cafes: reviews }) }); const j = await res.json().catch(() => ({})); setBusy(""); if (res.ok) flash("Published ✓ everyone can see it now"); else if (j.error === "unauthorized") flash("Publish failed — admin code not set on server"); else flash("Publish failed — check the site is deployed and Blob is connected"); } catch { setBusy(""); flash("Publish failed — deploy the site first"); } };
   const tryUnlock = () => { const k = code.trim(); if (k === ADMIN_CODE) { setAdminKey(k); setMode("admin"); setGate(false); setCode(""); flash("Admin unlocked ✦"); } else flash("Wrong code"); };
 
   const flash = (m) => { setToast(m); setTimeout(() => setToast(""), 1600); };
