@@ -190,7 +190,7 @@ function CropView({ cfg, aspect, onChange }) {
 /* ════ AI ════ */
 const AI_ENDPOINT = (import.meta && import.meta.env && import.meta.env.VITE_AI_ENDPOINT) || "/api/anthropic";
 const PLACES_ENDPOINT = (import.meta && import.meta.env && import.meta.env.VITE_PLACES_ENDPOINT) || "/api/places";
-const ADMIN_CODE = (import.meta && import.meta.env && import.meta.env.VITE_ADMIN_CODE) || "fika-admin";
+const ADMIN_CODE = (import.meta && import.meta.env && import.meta.env.VITE_ADMIN_CODE) || "";
 const mapsUrl = (d) => "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent([d.name, d.city, d.country].filter(Boolean).join(" "));
 const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
@@ -250,7 +250,6 @@ export default function App() {
   const [mode, setMode] = useState("public");
   const [gate, setGate] = useState(false);
   const [code, setCode] = useState("");
-  const [place, setPlace] = useState(null);
   const [nickname, setNickname] = useState(() => lsGet("fika_nick", ""));
   const [nickInput, setNickInput] = useState("");
   const [wishlist, setWishlist] = useState(() => lsGet("fika_wish", []));
@@ -266,7 +265,7 @@ export default function App() {
   }, []);
   const exportData = () => { const blob = new Blob([JSON.stringify(reviews, null, 2)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "cafes.json"; a.click(); URL.revokeObjectURL(a.href); flash("Backup downloaded (cafes.json)"); };
   const publish = async () => { setBusy("Publishing…"); try { const res = await fetch("/api/cafes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ code: adminKey || ADMIN_CODE, cafes: reviews }) }); const j = await res.json().catch(() => ({})); setBusy(""); if (res.ok) flash("Published ✓ everyone can see it now"); else if (j.error === "unauthorized") flash("Publish failed — admin code not set on server"); else flash("Publish failed — check the site is deployed and Blob is connected"); } catch { setBusy(""); flash("Publish failed — deploy the site first"); } };
-  const tryUnlock = () => { const k = code.trim(); if (k === ADMIN_CODE) { setAdminKey(k); setMode("admin"); setGate(false); setCode(""); flash("Admin unlocked ✦"); } else flash("Wrong code"); };
+  const tryUnlock = () => { if (!ADMIN_CODE) { flash("Admin code not configured for this deployment"); return; } const k = code.trim(); if (k === ADMIN_CODE) { setAdminKey(k); setMode("admin"); setGate(false); setCode(""); flash("Admin unlocked ✦"); } else flash("Wrong code"); };
 
   const flash = (m) => { setToast(m); setTimeout(() => setToast(""), 1600); };
   const setNick = (val) => { const v = (val || "").trim(); if (!v) return; setNickname(v); lsSet("fika_nick", v); };
@@ -479,7 +478,7 @@ function InfoPanel({ d }) {
       const txt = await callClaude([{ role: "user", content: ctx + "\n\nSummarise what Google reviewers actually say about this café into a fun emoji-led breakdown for a cosy Nordic café guide. Be faithful; do not invent. Return ONLY JSON: {\"headline\":\"one warm 6-10 word verdict\",\"categories\":[{\"emoji\":\"a fitting emoji\",\"label\":\"Coffee\",\"verdict\":\"short phrase\"}]} covering any of Coffee, Pastry, Vibe, Service, Value that the reviews mention; pick a fitting emoji per category; each verdict under 8 words." }], "You faithfully summarise real user reviews. Output strictly valid JSON, no markdown, no preamble.");
       const j = JSON.parse((txt || "").replace(/```json|```/g, "").trim());
       setSum({ cats: j.categories || [], headline: j.headline || "" });
-    } catch (e) { setSum({ err: "Couldn’t summarise yet — this needs the AI + Google keys set in Netlify." }); }
+    } catch (e) { setSum({ err: "Couldn’t summarise yet — this needs the AI + Google keys set in Vercel." }); }
   };
   return (
     <div style={{ marginTop: 18, background: "rgba(255,255,255,0.55)", borderRadius: 18, padding: 16, boxShadow: "inset 0 0 0 1px " + C.line }}>
