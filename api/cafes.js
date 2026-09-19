@@ -5,6 +5,7 @@ import { put, list, del } from "@vercel/blob";
 
 const PREFIX = "cafes-";
 const token = process.env.BLOB_READ_WRITE_TOKEN; // auto-injected when a Blob store is connected
+const MAX_BYTES = 8 * 1024 * 1024; // guard against runaway publishes (e.g. many embedded photos)
 
 async function newestFirst() {
   const { blobs } = await list({ prefix: PREFIX, token });
@@ -30,8 +31,10 @@ export default async function handler(req, res) {
     if (!process.env.ADMIN_CODE || !body || body.code !== process.env.ADMIN_CODE) return res.status(401).json({ error: "unauthorized" });
     if (!Array.isArray(body.cafes)) return res.status(400).json({ error: "bad_payload" });
     if (!token) return res.status(500).json({ error: "no_blob_token" });
+    const payload = JSON.stringify(body.cafes);
+    if (payload.length > MAX_BYTES) return res.status(413).json({ error: "payload_too_large", maxBytes: MAX_BYTES });
     try {
-      const { url } = await put(PREFIX + Date.now() + ".json", JSON.stringify(body.cafes), {
+      const { url } = await put(PREFIX + Date.now() + ".json", payload, {
         access: "public",
         token,
         contentType: "application/json",
