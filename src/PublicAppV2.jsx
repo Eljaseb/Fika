@@ -56,6 +56,7 @@ function matchReview(catalogCafe, reviews) {
 }
 
 function publicRatingText(cafe) {
+  if (!cafe.rank && cafe.sources?.includes("Worth the Fika")) return "Your published review";
   if (!cafe.externalRating) return "Guide pick";
   return `${Number(cafe.externalRating).toFixed(1)}${cafe.externalReviews ? ` · ${cafe.externalReviews.toLocaleString()} public reviews` : ""}`;
 }
