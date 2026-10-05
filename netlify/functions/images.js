@@ -13,7 +13,7 @@ export default async (req) => {
   if (req.method !== "GET") return new Response("Method not allowed", { status: 405 });
 
   const url = new URL(req.url);
-  const key = url.pathname.replace(/^\/api\/images\//, "");
+  const key = url.pathname.replace(/^\/api\/media\//, "");
   if (!/^[a-zA-Z0-9._-]+$/.test(key)) return new Response("Not found", { status: 404 });
 
   const ext = key.split(".").pop().toLowerCase();
@@ -32,4 +32,4 @@ export default async (req) => {
   });
 };
 
-export const config = { path: "/api/images/*" };
+export const config = { path: "/api/media/*" };
