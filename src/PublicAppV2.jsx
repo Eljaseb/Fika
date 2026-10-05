@@ -131,7 +131,7 @@ function CatalogRow({cafe,review,saved,onSave,onOpen}) {
   const rated = Boolean(review);
   return (
     <article className="catalog-row">
-      <div className="rank-no">{String(cafe.rank).padStart(2,"0")}</div>
+      <div className="rank-no">{cafe.rank ? String(cafe.rank).padStart(2,"0") : "WT"}</div>
       <div className="catalog-main">
         <div className="catalog-title-line">
           <div>
@@ -144,7 +144,7 @@ function CatalogRow({cafe,review,saved,onSave,onOpen}) {
         <div className="catalog-meta">
           <span>{cafe.kind}</span>
           <span>{publicRatingText(cafe)}</span>
-          <span>≈ {cafe.distanceKm} km from centre</span>
+          {cafe.distanceKm != null && <span>≈ {cafe.distanceKm} km from centre</span>}
           {rated && <span className="own-score">WT Fika {fikaScore(review)}/100</span>}
         </div>
       </div>
@@ -166,7 +166,7 @@ function Detail({cafe,review,onClose}) {
         <button className="v2-close" onClick={onClose}>×</button>
         <div className="v2-modal-hero">
           {cover ? <img src={cover} alt=""/> : <div className="v2-placeholder">{cafe.name.split(/\s+/).slice(0,2).map(x=>x[0]).join("")}</div>}
-          <div className="v2-modal-overlay"><span>#{cafe.rank} · Copenhagen 50</span><h2>{cafe.name}</h2></div>
+          <div className="v2-modal-overlay"><span>{cafe.rank ? `#${cafe.rank} · Copenhagen 50` : "Worth the Fika review"}</span><h2>{cafe.name}</h2></div>
         </div>
         <div className="v2-modal-body">
           <div className="detail-status-row">
@@ -216,8 +216,7 @@ export default function PublicAppV2() {
       try {
         const [catRes,revRes] = await Promise.all([fetch("/copenhagen50.json"),fetch(CAFE_API)]);
         const cat = await catRes.json();
-        let rev = revRes.ok ? await revRes.json() : [];
-        if (!Array.isArray(rev) || !rev.length) rev = await fetch("/cafes.json").then(r=>r.json());
+        const rev = revRes.ok ? await revRes.json() : [];
         if (!cancelled) {
           setCatalog(cat?.cafes || []);
           setReviews(Array.isArray(rev) ? rev : []);
@@ -230,7 +229,25 @@ export default function PublicAppV2() {
   }, []);
 
   const enriched = useMemo(() => catalog.map(cafe => ({catalog:cafe,review:matchReview(cafe,reviews)})), [catalog,reviews]);
-  const rated = useMemo(() => enriched.filter(x=>x.review), [enriched]);
+  const ratedFrom50 = useMemo(() => enriched.filter(x=>x.review), [enriched]);
+  const customRated = useMemo(() => reviews
+    .filter(review => !enriched.some(x => x.review && String(x.review.id) === String(review.id)))
+    .map((review, index) => ({
+      catalog: {
+        id: "custom-" + review.id,
+        rank: null,
+        name: review.name || "Untitled café",
+        address: review.address || [review.city,review.country].filter(Boolean).join(", "),
+        distanceKm: null,
+        externalRating: null,
+        externalReviews: null,
+        kind: "Worth the Fika review",
+        why: review.reason || review.take || "Personally rated in Worth the Fika.",
+        sources: ["Worth the Fika"]
+      },
+      review
+    })), [reviews,enriched]);
+  const rated = useMemo(() => [...ratedFrom50, ...customRated], [ratedFrom50,customRated]);
   const visible = useMemo(() => {
     let list = view === "rated" ? rated : view === "saved" ? enriched.filter(x=>saved.includes(x.catalog.id)) : enriched;
     const q = normalize(query);
@@ -263,8 +280,8 @@ export default function PublicAppV2() {
           <p>We started with the strongest café and specialty-coffee candidates from Copenhagen guides and current public ratings. A public rating is only a discovery signal — the red badge appears only after a real Worth the Fika tasting review.</p>
           <div className="v2-stats">
             <div><strong>50</strong><span>researched cafés</span></div>
-            <div><strong>{rated.length}</strong><span>rated by the app</span></div>
-            <div><strong>{50-rated.length}</strong><span>still to taste</span></div>
+            <div><strong>{rated.length}</strong><span>your published ratings</span></div>
+            <div><strong>{Math.max(0,50-ratedFrom50.length)}</strong><span>Top 50 still to taste</span></div>
           </div>
         </section>
 
@@ -278,7 +295,7 @@ export default function PublicAppV2() {
         </section>
 
         {view==="rated" && <section className="rated-map-section">
-          <div className="section-copy"><p className="eyebrow-v2">Your tasting map</p><h2>Where you have already been.</h2><p>Only cafés that match a rated Worth the Fika review appear here. New reviews can be linked to a Copenhagen 50 entry in Creator Studio.</p></div>
+          <div className="section-copy"><p className="eyebrow-v2">Your tasting map</p><h2>Where you have already been.</h2><p>Every published Worth the Fika review appears here — including cafés outside the Copenhagen 50. Reviews linked to the shortlist inherit the exact branch address.</p></div>
           <RatedMap items={rated}/>
         </section>}
 
