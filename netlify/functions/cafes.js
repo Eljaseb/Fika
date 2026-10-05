@@ -58,7 +58,7 @@ function cleanCafe(value, index) {
     address: cleanText(v.address, 220),
     lat: Number.isFinite(Number(v.lat)) ? Number(v.lat) : null,
     lng: Number.isFinite(Number(v.lng)) ? Number(v.lng) : null,
-    cardZoom: Math.max(1, Math.min(2.5, Number(v.cardZoom) || 1)),
+    cardZoom: Math.max(0.7, Math.min(2.5, Number(v.cardZoom) || 1)),
     cardX: Math.max(-100, Math.min(100, Number(v.cardX) || 0)),
     cardY: Math.max(-100, Math.min(100, Number(v.cardY) || 0)),
     visitedOn: /^\d{4}-\d{2}-\d{2}$/.test(String(v.visitedOn || "")) ? String(v.visitedOn) : "",
