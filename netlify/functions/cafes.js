@@ -37,22 +37,27 @@ function cleanCategory(value) {
   };
 }
 
+function cleanImage(value) {
+  if (typeof value !== "string") return "";
+  const x = value.trim();
+  if (/^https:\/\//i.test(x) || /^\/api\/media\/[a-zA-Z0-9._-]+$/.test(x)) return x.slice(0, 1500);
+  return "";
+}
+
 function cleanCafe(value, index) {
   const v = value && typeof value === "object" ? value : {};
   const rawImgs = Array.isArray(v.imgs) ? v.imgs : typeof v.imgs === "string" ? [v.imgs] : [];
-  const imgs = rawImgs
-    .filter((x) => typeof x === "string" && /^https:\/\//i.test(x))
-    .slice(0, 6)
-    .map((x) => x.slice(0, 1500));
+  const imgs = rawImgs.map(cleanImage).filter(Boolean).slice(0, 6);
 
   return {
     id: typeof v.id === "string" || typeof v.id === "number" ? v.id : Date.now() + index,
     name: cleanText(v.name, 120) || "Untitled café",
     city: cleanText(v.city, 80),
     country: cleanText(v.country, 80),
+    visitedOn: /^\d{4}-\d{2}-\d{2}$/.test(String(v.visitedOn || "")) ? String(v.visitedOn) : "",
     handle: cleanText(v.handle, 100),
     scene: cleanText(v.scene, 120),
-    imgs: imgs.length ? imgs : null,
+    imgs: imgs.length ? imgs : [],
     drink: cleanCategory(v.drink),
     pastry: cleanCategory(v.pastry),
     atmosphere: Math.max(0, Math.min(5, Number(v.atmosphere) || 0)),
@@ -92,7 +97,7 @@ export default async (req) => {
   if (!timingSafeEqual(suppliedCode, adminCode)) return json({ error: "unauthorized" }, 401);
 
   const length = Number(req.headers.get("content-length") || 0);
-  if (length > 500000) return json({ error: "payload_too_large" }, 413);
+  if (length > 800000) return json({ error: "payload_too_large" }, 413);
 
   let body;
   try {
