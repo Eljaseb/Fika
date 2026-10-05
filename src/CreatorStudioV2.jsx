@@ -8,6 +8,8 @@ const PASTRY_CRITERIA = ["Flavour","Texture","Freshness","Filling","Presentation
 
 function avg(values){const nums=values.map(Number).filter(n=>Number.isFinite(n)&&n>0);return nums.length?nums.reduce((a,b)=>a+b,0)/nums.length:0}
 function score(cafe){const d=avg(Object.values(cafe?.drink?.ratings||{}));const p=avg(Object.values(cafe?.pastry?.ratings||{}));const s=avg([cafe?.atmosphere,cafe?.service,cafe?.value]);const h=avg([d,p].filter(Boolean));const total=h&&s?h*.72+s*.28:h||s||0;return total?Math.round(total*20):0}
+function score10(cafe){const s=score(cafe);return s?(s/10).toFixed(1):"–"}
+function category10(category){const s=avg(Object.values(category?.ratings||{}));return s?(s*2).toFixed(1):"–"}
 function normalize(v=""){return v.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}
 function mark(){return <div className="cv2-mark">F</div>}
 function initials(name){return String(name||"Fika").split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join("").toUpperCase()}
@@ -59,32 +61,124 @@ function wrap(ctx,text,maxWidth,maxLines){
 
 async function exportCard(cafe,format){
   const isStory=format==="story";
-  const W=1080,H=isStory?1920:1350,photoH=Math.round(H*(isStory?.57:.56)),p=70;
-  const canvas=document.createElement("canvas");canvas.width=W;canvas.height=H;const ctx=canvas.getContext("2d");
-  ctx.fillStyle="#211c19";ctx.fillRect(0,0,W,H);
+  const W=1080,H=isStory?1920:1350;
+  const p=62;
+  const heroH=Math.round(H*(isStory?.47:.51));
+  const canvas=document.createElement("canvas");
+  canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext("2d");
+
+  ctx.fillStyle="#fbf5e9";
+  ctx.fillRect(0,0,W,H);
+
   const cover=Array.isArray(cafe.imgs)?cafe.imgs[0]:null;
   const bitmap=await loadBitmap(cover);
   if(bitmap){
-    const place=coverPlacement(bitmap,W,photoH,Number(cafe.cardZoom)||1,Number(cafe.cardX)||0,Number(cafe.cardY)||0);
-    ctx.save();ctx.beginPath();ctx.rect(0,0,W,photoH);ctx.clip();
-    ctx.drawImage(bitmap,place.dx,place.dy,place.dw,place.dh);ctx.restore();
-    const g=ctx.createLinearGradient(0,0,0,photoH);g.addColorStop(.45,"rgba(0,0,0,0)");g.addColorStop(1,"rgba(0,0,0,.35)");ctx.fillStyle=g;ctx.fillRect(0,0,W,photoH);
+    const place=coverPlacement(bitmap,W,heroH,Number(cafe.cardZoom)||1,Number(cafe.cardX)||0,Number(cafe.cardY)||0);
+    ctx.save();ctx.beginPath();ctx.rect(0,0,W,heroH);ctx.clip();
+    ctx.fillStyle="#d5c7b5";ctx.fillRect(0,0,W,heroH);
+    ctx.drawImage(bitmap,place.dx,place.dy,place.dw,place.dh);
+    const shade=ctx.createLinearGradient(0,0,0,heroH);
+    shade.addColorStop(0,"rgba(28,21,17,.06)");
+    shade.addColorStop(.7,"rgba(28,21,17,0)");
+    shade.addColorStop(1,"rgba(28,21,17,.22)");
+    ctx.fillStyle=shade;ctx.fillRect(0,0,W,heroH);ctx.restore();
   }else{
-    const g=ctx.createLinearGradient(0,0,W,photoH);g.addColorStop(0,"#d9aa92");g.addColorStop(1,"#b7c19e");ctx.fillStyle=g;ctx.fillRect(0,0,W,photoH);
-    ctx.fillStyle="rgba(33,28,25,.72)";ctx.font="italic 700 180px Georgia";ctx.textAlign="center";ctx.fillText(initials(cafe.name),W/2,photoH/2);ctx.textAlign="left";
+    const g=ctx.createLinearGradient(0,0,W,heroH);g.addColorStop(0,"#d9b693");g.addColorStop(1,"#879477");
+    ctx.fillStyle=g;ctx.fillRect(0,0,W,heroH);
+    ctx.fillStyle="rgba(44,32,25,.65)";ctx.font="italic 700 185px Georgia";ctx.textAlign="center";
+    ctx.fillText(initials(cafe.name),W/2,heroH/2);ctx.textAlign="left";
   }
-  ctx.fillStyle="rgba(255,253,249,.92)";ctx.beginPath();ctx.roundRect(p,p,320,70,35);ctx.fill();ctx.fillStyle="#211c19";ctx.font="700 25px Arial";ctx.fillText("WORTH THE FIKA",p+34,p+45);
-  const sc=score(cafe);ctx.fillStyle="#f5efe6";ctx.beginPath();ctx.arc(W-p-92,photoH-p-92,92,0,Math.PI*2);ctx.fill();ctx.textAlign="center";ctx.fillStyle="#211c19";ctx.font="500 72px Georgia";ctx.fillText(String(sc||"–"),W-p-92,photoH-p-72);ctx.font="700 18px Arial";ctx.fillStyle="#786f68";ctx.fillText("/100",W-p-92,photoH-p-40);ctx.textAlign="left";
-  let y=photoH+95;ctx.fillStyle="#e9b8a7";ctx.font="700 23px Arial";ctx.fillText([cafe.city,cafe.country].filter(Boolean).join(" · ").toUpperCase(),p,y);y+=80;
-  ctx.fillStyle="#f5efe6";ctx.font=(isStory?"500 90px Georgia":"500 76px Georgia");for(const line of wrap(ctx,cafe.name,W-p*2,2)){ctx.fillText(line,p,y);y+=isStory?96:82}
-  y+=20;ctx.fillStyle="#cec3ba";ctx.font="400 34px Arial";for(const line of wrap(ctx,cafe.take||cafe.reason||"A café worth remembering.",W-p*2,isStory?4:3)){ctx.fillText(line,p,y);y+=50}
-  const footer=H-70;ctx.strokeStyle="rgba(245,239,230,.22)";ctx.beginPath();ctx.moveTo(p,footer-55);ctx.lineTo(W-p,footer-55);ctx.stroke();
-  ctx.fillStyle="#f5efe6";ctx.font="700 23px Arial";ctx.fillText(cafe.drink?.type?("COFFEE · "+cafe.drink.type.toUpperCase()):"CURATED CAFÉ REVIEW",p,footer);
-  ctx.textAlign="right";ctx.fillStyle="#e9b8a7";ctx.fillText("@WORTHTHEFIKA",W-p,footer);ctx.textAlign="left";
-  const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/png",1));if(!blob)throw new Error("card_failed");
-  const u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=String(cafe.name||"fika").toLowerCase().replace(/[^a-z0-9]+/g,"-")+"-"+(isStory?"story":"post")+".png";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500);
-}
 
+  function pill(x,y,text,alignRight=false){
+    ctx.font="700 24px Arial";
+    const width=ctx.measureText(text).width+38;
+    const left=alignRight?x-width:x;
+    ctx.fillStyle="rgba(35,29,25,.76)";
+    ctx.beginPath();ctx.roundRect(left,y,width,55,28);ctx.fill();
+    ctx.fillStyle="#fffaf2";ctx.fillText(text,left+19,y+36);
+    return width;
+  }
+
+  pill(p,42,"⌖ "+([cafe.city,cafe.country].filter(Boolean).join(", ")||"Copenhagen"));
+  if(cafe.scene) pill(W-p,42,"☀ "+cafe.scene,true);
+
+  const sc=score10(cafe);
+  const badgeR=isStory?105:95;
+  const bx=W-p-badgeR,by=heroH-badgeR+6;
+  ctx.fillStyle="#fffaf2";ctx.beginPath();ctx.arc(bx,by,badgeR,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle="#c39a4a";ctx.lineWidth=5;ctx.stroke();
+  ctx.strokeStyle="#e5c987";ctx.lineWidth=2;ctx.beginPath();ctx.arc(bx,by,badgeR-10,0,Math.PI*2);ctx.stroke();
+  ctx.fillStyle="#2c211b";ctx.textAlign="center";ctx.font=`600 ${isStory?84:74}px Georgia`;ctx.fillText(sc,bx,by+18);
+  ctx.fillStyle="#a27c3d";ctx.font="800 17px Arial";ctx.fillText("FIKA SCORE",bx,by+54);ctx.textAlign="left";
+
+  let y=heroH+86;
+  ctx.fillStyle="#9b7a43";ctx.font="800 18px Arial";
+  ctx.fillText("WORTH THE FIKA",p,y);y+=62;
+
+  ctx.fillStyle="#2b211c";ctx.font=`600 ${isStory?78:70}px Georgia`;
+  const titleLines=wrap(ctx,cafe.name,W-p*2,isStory?2:2);
+  for(const line of titleLines){ctx.fillText(line,p,y);y+=isStory?86:76}
+  y+=16;
+
+  if(score(cafe)>=80){
+    ctx.font="800 22px Arial";
+    const text="✓  WORTH THE TRIP";
+    const w=ctx.measureText(text).width+38;
+    ctx.fillStyle="#5d744f";ctx.beginPath();ctx.roundRect(p,y,w,54,27);ctx.fill();
+    ctx.fillStyle="#fff";ctx.fillText(text,p+19,y+35);y+=82;
+  }
+
+  const tags=(cafe.bestFor||[]).slice(0,3);
+  if(tags.length){
+    let tx=p;
+    ctx.font="700 18px Arial";
+    for(const tag of tags){
+      const w=ctx.measureText(tag).width+30;
+      if(tx+w>W-p){break}
+      ctx.fillStyle="#eee5d7";ctx.beginPath();ctx.roundRect(tx,y,w,43,22);ctx.fill();
+      ctx.fillStyle="#66594e";ctx.fillText(tag,tx+15,y+28);tx+=w+10;
+    }
+    y+=72;
+  }
+
+  ctx.fillStyle="#a88852";ctx.font="800 18px Arial";ctx.fillText("TASTING HIGHLIGHTS",p,y);
+  ctx.strokeStyle="#e2d5c4";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p+245,y-5);ctx.lineTo(W-p,y-5);ctx.stroke();
+  y+=45;
+
+  function tastingRow(emoji,title,detail,rating){
+    if(!title)return;
+    ctx.fillStyle="#f0e4d5";ctx.beginPath();ctx.arc(p+26,y+22,26,0,Math.PI*2);ctx.fill();
+    ctx.font="26px Arial";ctx.fillStyle="#2d231e";ctx.fillText(emoji,p+11,y+31);
+    ctx.font="600 29px Georgia";ctx.fillText(title,p+70,y+23);
+    if(detail){
+      ctx.font="400 18px Arial";ctx.fillStyle="#7d7168";
+      const clean=String(detail).slice(0,72);
+      ctx.fillText(clean,p+70,y+50);
+    }
+    ctx.textAlign="right";ctx.fillStyle="#b5573d";ctx.font="700 34px Georgia";ctx.fillText(rating,W-p,y+30);ctx.textAlign="left";
+    ctx.strokeStyle="#ece1d4";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(p,y+71);ctx.lineTo(W-p,y+71);ctx.stroke();
+    y+=88;
+  }
+
+  tastingRow("☕",cafe.drink?.type,cafe.drink?.note||cafe.drink?.mod,category10(cafe.drink));
+  tastingRow("🥐",cafe.pastry?.type,cafe.pastry?.note||cafe.pastry?.subtype,category10(cafe.pastry));
+
+  const verdict=cafe.reason||cafe.take||"A café worth remembering.";
+  y+=20;ctx.fillStyle="#4f4037";ctx.font=`500 ${isStory?30:27}px Georgia`;
+  for(const line of wrap(ctx,verdict,W-p*2,isStory?4:3)){ctx.fillText(line,p,y);y+=isStory?42:38}
+
+  const footer=H-55;
+  ctx.strokeStyle="#d8c7ad";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p,footer-52);ctx.lineTo(W-p,footer-52);ctx.stroke();
+  ctx.fillStyle="#a88345";ctx.font="800 19px Arial";ctx.fillText("✦  FIKA REVIEWS",p,footer);
+  ctx.textAlign="right";ctx.fillStyle="#6c5d51";ctx.font="700 20px Arial";ctx.fillText("@WorthTheFika",W-p,footer);ctx.textAlign="left";
+
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/png",1));
+  if(!blob)throw new Error("card_failed");
+  const u=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=u;a.download=String(cafe.name||"fika").toLowerCase().replace(/[^a-z0-9]+/g,"-")+"-"+(isStory?"story":"post")+".png";
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500);
+}
 function caption(cafe){
   const tags=(cafe.bestFor||[]).slice(0,4).map(x=>"#"+String(x).replace(/[^a-z0-9]+/gi,"")).filter(Boolean).join(" ");
   return [cafe.name+" · "+(cafe.city||""),"Worth the Fika score: "+score(cafe)+"/100",cafe.take||cafe.reason||"",cafe.drink?.type?"☕ "+cafe.drink.type:"",cafe.pastry?.type?"🥐 "+cafe.pastry.type:"","",tags+" #WorthTheFika #Fika"].join("\n");
@@ -217,16 +311,31 @@ export default function CreatorStudioV2(){
         </div>}
 
         {tab==="social"&&<div className="cv2-card social-card-editor">
-          <div className="section-head"><div><p className="cv2-eyebrow">Instagram</p><h3>Post first. Story when you want it.</h3></div><span>The default card is a 4:5 Instagram post.</span></div>
+          <div className="section-head"><div><p className="cv2-eyebrow">Instagram</p><h3>Your finished Fika card</h3></div><span>Post is the default. Story uses the same visual language in 9:16.</span></div>
           <div className="format-toggle"><button className={format==="post"?"active":""} onClick={()=>setFormat("post")}>Post · 1080×1350</button><button className={format==="story"?"active":""} onClick={()=>setFormat("story")}>Story · 1080×1920</button></div>
           <div className="card-edit-grid">
-            <div className={format==="story"?"ig-preview story":"ig-preview post"}>
-              <div className="ig-image-wrap">{cover?<img src={cover} alt="" style={{transform:`translate(${x*.22}%,${y*.22}%) scale(${zoom})`}}/>:<div className="ig-fallback">{initials(selected.name)}</div>}<span className="ig-brand">WORTH THE FIKA</span><div className="ig-score">{score(selected)||"–"}<small>/100</small></div></div>
-              <div className="ig-copy"><small>{selected.city}</small><h4>{selected.name}</h4><p>{selected.take||selected.reason||"Add your verdict in the Review tab."}</p><b>@WORTHTHEFIKA</b></div>
+            <div className={format==="story"?"ig-preview editorial story":"ig-preview editorial post"}>
+              <div className="ig-image-wrap">
+                {cover?<img src={cover} alt="" style={{transform:`translate(${x*.22}%,${y*.22}%) scale(${zoom})`}}/>:<div className="ig-fallback">{initials(selected.name)}</div>}
+                <span className="ig-location">⌖ {selected.city}{selected.country?", "+selected.country:""}</span>
+                {selected.scene&&<span className="ig-scene">☀ {selected.scene}</span>}
+                <div className="ig-score"><strong>{score10(selected)}</strong><small>FIKA SCORE</small></div>
+              </div>
+              <div className="ig-paper">
+                <span className="ig-kicker">WORTH THE FIKA</span>
+                <h4>{selected.name}</h4>
+                {score(selected)>=80&&<span className="ig-worth">✓ WORTH THE TRIP</span>}
+                <div className="ig-tags">{(selected.bestFor||[]).slice(0,3).map(tag=><span key={tag}>{tag}</span>)}</div>
+                <p className="ig-section-label">TASTING HIGHLIGHTS</p>
+                {selected.drink?.type&&<div className="ig-taste-row"><span>☕</span><div><b>{selected.drink.type}</b><small>{selected.drink.note||selected.drink.mod}</small></div><strong>{category10(selected.drink)}</strong></div>}
+                {selected.pastry?.type&&<div className="ig-taste-row"><span>🥐</span><div><b>{selected.pastry.type}</b><small>{selected.pastry.note||selected.pastry.subtype}</small></div><strong>{category10(selected.pastry)}</strong></div>}
+                <p className="ig-verdict">{selected.reason||selected.take||"Add your verdict in the Review tab."}</p>
+                <div className="ig-footer"><span>✦ FIKA REVIEWS</span><b>@WorthTheFika</b></div>
+              </div>
             </div>
             <aside className="crop-controls">
-              <h4>Edit cover photo</h4>
-              <p>Zoom in or back out, then move the image to frame the coffee or pastry exactly how you want.</p>
+              <h4>Frame the hero photo</h4>
+              <p>Zoom in or out and move the image until the coffee, pastry or room sits exactly where you want it.</p>
               <label>Zoom in / out <b>{zoom.toFixed(2)}×</b><input type="range" min=".7" max="2.5" step=".05" value={zoom} onChange={e=>patch("cardZoom",Number(e.target.value))}/></label>
               <label>Move left / right <b>{x}</b><input type="range" min="-100" max="100" step="2" value={x} onChange={e=>patch("cardX",Number(e.target.value))}/></label>
               <label>Move up / down <b>{y}</b><input type="range" min="-100" max="100" step="2" value={y} onChange={e=>patch("cardY",Number(e.target.value))}/></label>
@@ -236,7 +345,6 @@ export default function CreatorStudioV2(){
           </div>
           <div className="caption-panel"><pre>{caption(selected)}</pre><button onClick={async()=>{await navigator.clipboard.writeText(caption(selected));setStatus("Caption copied ✓")}}>Copy caption</button></div>
         </div>}
-
         <footer className="cv2-footer"><span>Changes stay private until you press <b>Publish all</b>.</span><div><button onClick={()=>setTab(tab==="review"?"photos":tab==="photos"?"social":"review")}>{tab==="review"?"Next: photos":tab==="photos"?"Next: Instagram":"Back to review"}</button><button className="primary" onClick={publish}>Publish all</button></div></footer>
       </section>
     </div>
