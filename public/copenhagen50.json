@@ -2,7 +2,7 @@
   "researchedOn": "2026-10-05",
   "center": "Copenhagen City Hall / Rådhuspladsen",
   "radiusKm": 5,
-  "method": "Curated from Visit Copenhagen, European Coffee Trip and current public business ratings. External ratings are reference signals, not Worth the Fika scores.",
+  "method": "Curated from Visit Copenhagen, European Coffee Trip, Falstaff Coffee Guide Nordics 2026 and current public business ratings. External ratings are discovery signals, not Worth the Fika scores.",
   "cafes": [
     {
       "rank": 1,
@@ -194,7 +194,23 @@
       ]
     },
     {
-      "rank": 13,
+      "id": "democratic-coffee",
+      "name": "Democratic Coffee",
+      "address": "Krystalgade 15, 1172 København K",
+      "distanceKm": 0.65,
+      "externalRating": 4.4,
+      "externalReviews": 946,
+      "kind": "Specialty coffee · bakery",
+      "why": "A Copenhagen classic inside the city library, known for light-roast coffee and its almond croissant.",
+      "sources": [
+        "Visit Copenhagen",
+        "Falstaff Coffee Guide Nordics 2026",
+        "Public ratings"
+      ],
+      "rank": 13
+    },
+    {
+      "rank": 14,
       "id": "prolog-frederiksberg",
       "name": "Prolog Coffee Bar · Frederiksberg",
       "address": "Marguerite Vibys Plads 8, 2000 Frederiksberg",
@@ -209,7 +225,7 @@
       ]
     },
     {
-      "rank": 14,
+      "rank": 15,
       "id": "lille-bakery",
       "name": "Lille Bakery",
       "address": "Refshalevej 213B, 1432 København K",
@@ -225,7 +241,7 @@
       ]
     },
     {
-      "rank": 15,
+      "rank": 16,
       "id": "andersen-maillard",
       "name": "Andersen & Maillard · Nørrebrogade",
       "address": "Nørrebrogade 62, 2200 København N",
@@ -240,7 +256,7 @@
       ]
     },
     {
-      "rank": 16,
+      "rank": 17,
       "id": "april",
       "name": "April Coffee",
       "address": "Ryesgade 86A, 2100 København Ø",
@@ -255,7 +271,7 @@
       ]
     },
     {
-      "rank": 17,
+      "rank": 18,
       "id": "darcys",
       "name": "Darcy's Kaffe",
       "address": "Rantzausgade 2, 2200 København N",
@@ -270,7 +286,7 @@
       ]
     },
     {
-      "rank": 18,
+      "rank": 19,
       "id": "kaffedepartementet",
       "name": "Kaffedepartementet",
       "address": "Rentemestervej 64, 2400 København NV",
@@ -286,7 +302,7 @@
       ]
     },
     {
-      "rank": 19,
+      "rank": 20,
       "id": "collective-bakery",
       "name": "Collective Bakery",
       "address": "Nørrebrogade 176, 2200 København N",
@@ -301,7 +317,7 @@
       ]
     },
     {
-      "rank": 20,
+      "rank": 21,
       "id": "enghave-kaffe",
       "name": "Enghave Kaffe",
       "address": "Enghave Plads 3, 1670 København V",
@@ -316,7 +332,7 @@
       ]
     },
     {
-      "rank": 21,
+      "rank": 22,
       "id": "kaf",
       "name": "KAF",
       "address": "Birkegade 21, 2200 København N",
@@ -331,7 +347,7 @@
       ]
     },
     {
-      "rank": 22,
+      "rank": 23,
       "id": "original-vandkunsten",
       "name": "Original Coffee · Vandkunsten",
       "address": "Vandkunsten 4, 1467 København K",
@@ -346,7 +362,7 @@
       ]
     },
     {
-      "rank": 23,
+      "rank": 24,
       "id": "original-bredgade",
       "name": "Original Coffee · Bredgade",
       "address": "Bredgade 36, 1260 København K",
@@ -361,7 +377,7 @@
       ]
     },
     {
-      "rank": 24,
+      "rank": 25,
       "id": "original-christianshavn",
       "name": "Original Coffee · Christianshavn",
       "address": "Overgaden Neden Vandet 41, 1414 København K",
@@ -376,7 +392,23 @@
       ]
     },
     {
-      "rank": 25,
+      "id": "sonny-raadhusstraede",
+      "name": "Sonny · Rådhusstræde",
+      "address": "Rådhusstræde 5, 1466 København K",
+      "distanceKm": 0.55,
+      "externalRating": 4.6,
+      "externalReviews": 39,
+      "kind": "Specialty coffee · breakfast",
+      "why": "A central Copenhagen favorite pairing La Cabra coffee with breakfast, matcha and a bright neighborhood-café feel.",
+      "sources": [
+        "Visit Copenhagen",
+        "Falstaff Coffee Guide Nordics 2026",
+        "Public ratings"
+      ],
+      "rank": 26
+    },
+    {
+      "rank": 27,
       "id": "o12",
       "name": "Ø12",
       "address": "Øster Farimagsgade 12B, 2100 København Ø",
@@ -390,7 +422,7 @@
       ]
     },
     {
-      "rank": 26,
+      "rank": 28,
       "id": "alice",
       "name": "Alice",
       "address": "Markmandsgade 1 / Amagerbrogade 5, 2300 København S",
@@ -405,7 +437,7 @@
       ]
     },
     {
-      "rank": 27,
+      "rank": 29,
       "id": "atelier-september",
       "name": "Atelier September",
       "address": "Gothersgade 30, 1123 København K",
@@ -420,7 +452,7 @@
       ]
     },
     {
-      "rank": 28,
+      "rank": 30,
       "id": "la-cabra",
       "name": "La Cabra",
       "address": "Møntergade 3A, 1116 København K",
@@ -435,7 +467,7 @@
       ]
     },
     {
-      "rank": 29,
+      "rank": 31,
       "id": "orsa",
       "name": "Orsa Coffee",
       "address": "Vesterbrogade 46, 1620 København V",
@@ -450,7 +482,7 @@
       ]
     },
     {
-      "rank": 30,
+      "rank": 32,
       "id": "buka",
       "name": "BUKA · Store Kongensgade",
       "address": "Store Kongensgade 18, 1264 København K",
@@ -464,7 +496,7 @@
       ]
     },
     {
-      "rank": 31,
+      "rank": 33,
       "id": "apotek57",
       "name": "Apotek 57",
       "address": "Fredericiagade 57, 1310 København K",
@@ -478,7 +510,7 @@
       ]
     },
     {
-      "rank": 32,
+      "rank": 34,
       "id": "lille-petra",
       "name": "Lille Petra Café",
       "address": "Kronprinsessegade 4, 1306 København K",
@@ -493,7 +525,7 @@
       ]
     },
     {
-      "rank": 33,
+      "rank": 35,
       "id": "social-brew",
       "name": "Social Brew Copenhagen",
       "address": "Vester Farimagsgade 3, 1606 København V",
@@ -508,7 +540,22 @@
       ]
     },
     {
-      "rank": 34,
+      "id": "roast-islands-brygge",
+      "name": "ROAST Coffee · Islands Brygge",
+      "address": "Vestmannagade 4, 2300 København S",
+      "distanceKm": 1.6,
+      "externalRating": 4.5,
+      "externalReviews": null,
+      "kind": "Coffee roastery · specialty coffee",
+      "why": "A roastery café by the canals where roasting and brewing are both central to the experience.",
+      "sources": [
+        "Visit Copenhagen",
+        "Falstaff Coffee Guide Nordics 2026"
+      ],
+      "rank": 36
+    },
+    {
+      "rank": 37,
       "id": "roast-studiestraede",
       "name": "ROAST Coffee · Studiestræde",
       "address": "Studiestræde 16, 1455 København K",
@@ -522,7 +569,7 @@
       ]
     },
     {
-      "rank": 35,
+      "rank": 38,
       "id": "kontra",
       "name": "Kontra Coffee",
       "address": "Dag Hammarskjölds Allé 36, 2100 København Ø",
@@ -536,7 +583,7 @@
       ]
     },
     {
-      "rank": 36,
+      "rank": 39,
       "id": "cc-jaegersborggade",
       "name": "Coffee Collective · Jægersborggade",
       "address": "Jægersborggade 57, 2200 København N",
@@ -550,7 +597,7 @@
       ]
     },
     {
-      "rank": 37,
+      "rank": 40,
       "id": "cc-godthaabsvej",
       "name": "Coffee Collective · Godthåbsvej",
       "address": "Godthåbsvej 34B, 2000 Frederiksberg",
@@ -564,7 +611,7 @@
       ]
     },
     {
-      "rank": 38,
+      "rank": 41,
       "id": "cc-carlsberg",
       "name": "Coffee Collective · Carlsberg Byen",
       "address": "Fadet 8, 1799 København V",
@@ -578,7 +625,7 @@
       ]
     },
     {
-      "rank": 39,
+      "rank": 42,
       "id": "prolog-papiroeen",
       "name": "Prolog Coffee Bar · Papirøen",
       "address": "Papirøen 87, 1432 København K",
@@ -592,7 +639,7 @@
       ]
     },
     {
-      "rank": 40,
+      "rank": 43,
       "id": "yellow-bird",
       "name": "Yellow Bird Coffee",
       "address": "Amager Strandvej 108, 2300 København S",
@@ -606,7 +653,7 @@
       ]
     },
     {
-      "rank": 41,
+      "rank": 44,
       "id": "impact-roasters",
       "name": "Impact Roasters · Valby",
       "address": "Valby Langgade 128, 2500 Valby",
@@ -621,7 +668,7 @@
       ]
     },
     {
-      "rank": 42,
+      "rank": 45,
       "id": "gitz",
       "name": "GITZ Coffee",
       "address": "Landskronagade 27A, 2100 København Ø",
@@ -635,21 +682,7 @@
       ]
     },
     {
-      "rank": 43,
-      "id": "buna",
-      "name": "Buna & Co.",
-      "address": "Vesterbrogade 108, 1620 København V",
-      "distanceKm": 1.6,
-      "externalRating": 5,
-      "externalReviews": 1,
-      "kind": "Coffee bar",
-      "why": "A smaller Vesterbro option that can surface a less obvious Fika pick.",
-      "sources": [
-        "European Coffee Trip"
-      ]
-    },
-    {
-      "rank": 44,
+      "rank": 46,
       "id": "norange",
       "name": "Norange",
       "address": "Blegdamsvej 4D, 2200 København N",
@@ -663,21 +696,7 @@
       ]
     },
     {
-      "rank": 45,
-      "id": "lokal",
-      "name": "Lokal",
-      "address": "Sønder Boulevard 59, 1720 København V",
-      "distanceKm": 1.5,
-      "externalRating": null,
-      "externalReviews": null,
-      "kind": "Neighborhood café",
-      "why": "A Vesterbro neighborhood café that fits the app's 'worth a detour?' approach.",
-      "sources": [
-        "European Coffee Trip"
-      ]
-    },
-    {
-      "rank": 46,
+      "rank": 47,
       "id": "granola",
       "name": "Granola",
       "address": "Værnedamsvej 5, 1819 Frederiksberg C",
@@ -692,7 +711,7 @@
       ]
     },
     {
-      "rank": 47,
+      "rank": 48,
       "id": "dyrehaven",
       "name": "Café Dyrehaven",
       "address": "Sønder Boulevard 72, 1720 København V",
@@ -704,20 +723,6 @@
       "sources": [
         "Visit Copenhagen",
         "Public ratings"
-      ]
-    },
-    {
-      "rank": 48,
-      "id": "original-istedgade",
-      "name": "Original Coffee · Istedgade",
-      "address": "Istedgade 64, 1650 København V",
-      "distanceKm": 1.1,
-      "externalRating": null,
-      "externalReviews": null,
-      "kind": "Coffee bar",
-      "why": "A convenient Vesterbro Original Coffee branch with a distinct neighborhood feel.",
-      "sources": [
-        "European Coffee Trip"
       ]
     },
     {
