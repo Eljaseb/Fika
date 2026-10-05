@@ -1,0 +1,9 @@
+{
+  "name": "Worth the Fika",
+  "short_name": "Fika",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5efe6",
+  "theme_color": "#f5efe6",
+  "description": "A curated guide to coffee, pastry and café moments worth crossing the city for."
+}
