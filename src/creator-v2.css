@@ -14,3 +14,31 @@
 
 .cv2-empty{align-content:center;gap:14px;text-align:center}.cv2-empty>p{max-width:520px;color:var(--muted);line-height:1.5;margin:0}.cv2-empty-actions{width:min(620px,100%);display:grid;grid-template-columns:1fr 1fr;gap:9px}.cv2-empty-actions button{height:auto;min-height:48px;padding:10px 14px}.cv2-empty-actions .secondary-empty{background:var(--white);color:var(--ink);border:1px solid var(--line)}
 @media(max-width:700px){.cv2-empty-actions{grid-template-columns:1fr}}
+
+
+/* v3 editorial Instagram card */
+.ig-preview.editorial{background:#fbf5e9;color:#2a211c;border:1px solid #d9cbb9;box-shadow:0 20px 55px rgba(58,40,29,.12);display:grid;overflow:hidden}
+.ig-preview.editorial.post{grid-template-rows:51% 49%}
+.ig-preview.editorial.story{grid-template-rows:47% 53%}
+.ig-preview.editorial .ig-image-wrap{background:linear-gradient(135deg,#d7b594,#879577)}
+.ig-preview.editorial .ig-image-wrap:after{content:"";position:absolute;inset:45% 0 0;background:linear-gradient(transparent,rgba(32,24,19,.2));pointer-events:none}
+.ig-preview.editorial .ig-location,.ig-preview.editorial .ig-scene{position:absolute;top:14px;z-index:2;background:rgba(39,31,26,.72);color:white;backdrop-filter:blur(8px);border-radius:999px;padding:7px 9px;font-size:8px;font-weight:750;white-space:nowrap;max-width:44%;overflow:hidden;text-overflow:ellipsis}
+.ig-preview.editorial .ig-location{left:14px}.ig-preview.editorial .ig-scene{right:14px}
+.ig-preview.editorial .ig-score{right:16px;bottom:-5px;width:70px;height:70px;border:3px double #c69e53;background:#fffdf7;z-index:3;color:#2c211b}
+.ig-preview.editorial .ig-score strong{font:600 27px/1 Georgia,serif}.ig-preview.editorial .ig-score small{color:#9c773c;font-size:6px;letter-spacing:.12em}
+.ig-paper{padding:20px 22px 15px;display:flex;flex-direction:column;min-height:0}
+.ig-kicker{font-size:7px;letter-spacing:.17em;color:#9c7b45;font-weight:850}
+.ig-paper h4{font:600 32px/1 Georgia,serif;letter-spacing:-.035em;margin:7px 0 10px;color:#2a211c}
+.ig-worth{align-self:flex-start;border-radius:999px;background:#5d744f;color:white;padding:6px 9px;font-size:7px;font-weight:850;letter-spacing:.04em}
+.ig-tags{display:flex;gap:5px;flex-wrap:wrap;margin:7px 0 9px}.ig-tags span{background:#eee5d8;color:#62564d;border-radius:999px;padding:5px 7px;font-size:6px}
+.ig-section-label{font-size:6px!important;letter-spacing:.16em!important;color:#a5824a!important;font-weight:850!important;margin:2px 0 0!important;padding-top:7px;border-top:1px solid #eadfD1}
+.ig-taste-row{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:8px;align-items:center;border-bottom:1px solid #eadfd1;padding:7px 0}.ig-taste-row>span{width:26px;height:26px;border-radius:50%;background:#f0e4d5;display:grid;place-items:center;font-size:12px}.ig-taste-row div{display:grid;min-width:0}.ig-taste-row b{font:600 11px Georgia,serif}.ig-taste-row small{font-size:6px;color:#7d7168;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ig-taste-row>strong{font:700 15px Georgia,serif;color:#b65a40}
+.ig-verdict{font:500 9px/1.35 Georgia,serif!important;color:#4c3d33!important;margin:8px 0!important;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.ig-footer{margin-top:auto;border-top:1px solid #d9c7ad;padding-top:8px;display:flex;justify-content:space-between;gap:10px;align-items:center;color:#9e7c43;font-size:6px;font-weight:850;letter-spacing:.08em}.ig-footer b{color:#66584d}
+.ig-preview.editorial.story .ig-paper{padding:24px 22px 18px}.ig-preview.editorial.story .ig-paper h4{font-size:34px}.ig-preview.editorial.story .ig-verdict{-webkit-line-clamp:5;font-size:10px!important}
+.social-card-editor .section-head h3{font-size:34px}
+.crop-controls{background:#f8f1e7;border-color:#d8c9b8}.crop-controls h4{color:#2b211c}.download-card{background:#5d744f;color:white}
+@media(max-width:700px){
+  .ig-preview.editorial.post{max-width:360px}.ig-preview.editorial.story{max-width:295px}
+  .ig-paper h4{font-size:28px}.ig-taste-row{grid-template-columns:25px minmax(0,1fr) auto}
+}
