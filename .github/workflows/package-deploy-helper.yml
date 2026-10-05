@@ -1,0 +1,41 @@
+name: Package Netlify deploy helper
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Fika
+        uses: actions/checkout@v4
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Prepare clean source bundle
+        run: |
+          mkdir -p deploy-artifact/source
+          rsync -a --exclude='.git' --exclude='node_modules' --exclude='deploy-artifact' ./ deploy-artifact/source/
+
+      - name: Install Netlify MCP deploy runner
+        run: |
+          mkdir -p deploy-artifact/runner
+          cd deploy-artifact/runner
+          npm init -y
+          npm install @netlify/mcp@1.17.0
+
+      - name: Upload deploy helper
+        uses: actions/upload-artifact@v4
+        with:
+          name: fika-netlify-deploy-helper
+          path: deploy-artifact
+          retention-days: 1
+          compression-level: 6
