@@ -36,15 +36,13 @@ function RatingSlider({label,value,onChange}){
   return <label className="cv2-rating"><span>{label}</span><input type="range" min="0" max="5" step=".5" value={n} onChange={e=>onChange(Number(e.target.value))}/><b>{n?n.toFixed(1):"–"}</b></label>;
 }
 
-function fitCrop(bitmap,targetW,targetH,zoom=1,xShift=0,yShift=0){
-  const sr=bitmap.width/bitmap.height,tr=targetW/targetH;
-  let sw,sh;
-  if(sr>tr){sh=bitmap.height;sw=sh*tr}else{sw=bitmap.width;sh=sw/tr}
-  sw/=zoom;sh/=zoom;
-  const maxX=(bitmap.width-sw)/2,maxY=(bitmap.height-sh)/2;
-  const sx=Math.max(0,Math.min(bitmap.width-sw,(bitmap.width-sw)/2 + maxX*(xShift/100)));
-  const sy=Math.max(0,Math.min(bitmap.height-sh,(bitmap.height-sh)/2 + maxY*(yShift/100)));
-  return {sx,sy,sw,sh};
+function coverPlacement(bitmap,targetW,targetH,zoom=1,xShift=0,yShift=0){
+  const baseScale=Math.max(targetW/bitmap.width,targetH/bitmap.height);
+  const scale=baseScale*Math.max(.7,Number(zoom)||1);
+  const dw=bitmap.width*scale,dh=bitmap.height*scale;
+  const dx=(targetW-dw)/2 + (Number(xShift)||0)/100*targetW*.25;
+  const dy=(targetH-dh)/2 + (Number(yShift)||0)/100*targetH*.25;
+  return {dx,dy,dw,dh};
 }
 
 async function loadBitmap(url){
@@ -67,8 +65,9 @@ async function exportCard(cafe,format){
   const cover=Array.isArray(cafe.imgs)?cafe.imgs[0]:null;
   const bitmap=await loadBitmap(cover);
   if(bitmap){
-    const crop=fitCrop(bitmap,W,photoH,Number(cafe.cardZoom)||1,Number(cafe.cardX)||0,Number(cafe.cardY)||0);
-    ctx.drawImage(bitmap,crop.sx,crop.sy,crop.sw,crop.sh,0,0,W,photoH);
+    const place=coverPlacement(bitmap,W,photoH,Number(cafe.cardZoom)||1,Number(cafe.cardX)||0,Number(cafe.cardY)||0);
+    ctx.save();ctx.beginPath();ctx.rect(0,0,W,photoH);ctx.clip();
+    ctx.drawImage(bitmap,place.dx,place.dy,place.dw,place.dh);ctx.restore();
     const g=ctx.createLinearGradient(0,0,0,photoH);g.addColorStop(.45,"rgba(0,0,0,0)");g.addColorStop(1,"rgba(0,0,0,.35)");ctx.fillStyle=g;ctx.fillRect(0,0,W,photoH);
   }else{
     const g=ctx.createLinearGradient(0,0,W,photoH);g.addColorStop(0,"#d9aa92");g.addColorStop(1,"#b7c19e");ctx.fillStyle=g;ctx.fillRect(0,0,W,photoH);
@@ -110,8 +109,7 @@ export default function CreatorStudioV2(){
     (async()=>{
       try{
         const [revRes,catRes]=await Promise.all([fetch(API),fetch("/copenhagen50.json")]);
-        let rev=revRes.ok?await revRes.json():[];
-        if(!Array.isArray(rev)||!rev.length)rev=await fetch("/cafes.json").then(r=>r.json());
+        const rev=revRes.ok?await revRes.json():[];
         const cat=await catRes.json();
         if(cancelled)return;
         setCatalog(cat?.cafes||[]);
@@ -166,7 +164,7 @@ export default function CreatorStudioV2(){
 
   if(!ready)return <main className="cv2-login"><form onSubmit={e=>{e.preventDefault();loginWith(code,true)}}>{mark()}<p className="cv2-eyebrow">Private creator studio</p><h1>Rate your next fika.</h1><p>Choose a café from the Copenhagen 50 or add your own, upload photos, score the tasting and create the Instagram post.</p><input type="password" value={code} onChange={e=>setCode(e.target.value)} placeholder="Admin code" autoFocus/>{status&&<small>{status}</small>}<button>Open Creator Studio</button><a href="/">Back to public guide</a></form></main>;
 
-  if(!selected)return <main className="cv2-empty">{mark()}<h1>No reviews yet.</h1><button onClick={()=>add()}>+ Add your first café</button></main>;
+  if(!selected)return <main className="cv2-empty">{mark()}<h1>No published reviews yet.</h1><p>Start with one of the researched Copenhagen cafés or add a custom place.</p><div className="cv2-empty-actions"><button onClick={()=>add()}>+ Custom café</button>{catalog.slice(0,6).map(item=><button key={item.id} className="secondary-empty" onClick={()=>add(item)}>#{item.rank} · {item.name}</button>)}</div></main>;
 
   const photos=Array.isArray(selected.imgs)?selected.imgs:[];
   const cover=photos[0];
@@ -229,7 +227,7 @@ export default function CreatorStudioV2(){
             <aside className="crop-controls">
               <h4>Edit cover photo</h4>
               <p>Zoom in or back out, then move the image to frame the coffee or pastry exactly how you want.</p>
-              <label>Zoom <b>{zoom.toFixed(2)}×</b><input type="range" min="1" max="2.5" step=".05" value={zoom} onChange={e=>patch("cardZoom",Number(e.target.value))}/></label>
+              <label>Zoom in / out <b>{zoom.toFixed(2)}×</b><input type="range" min=".7" max="2.5" step=".05" value={zoom} onChange={e=>patch("cardZoom",Number(e.target.value))}/></label>
               <label>Move left / right <b>{x}</b><input type="range" min="-100" max="100" step="2" value={x} onChange={e=>patch("cardX",Number(e.target.value))}/></label>
               <label>Move up / down <b>{y}</b><input type="range" min="-100" max="100" step="2" value={y} onChange={e=>patch("cardY",Number(e.target.value))}/></label>
               <button className="reset-crop" onClick={()=>{patch("cardZoom",1);patch("cardX",0);patch("cardY",0)}}>Reset framing</button>
