@@ -1,0 +1,753 @@
+{
+  "researchedOn": "2026-10-05",
+  "center": "Copenhagen City Hall / Rådhuspladsen",
+  "radiusKm": 5,
+  "method": "Curated from Visit Copenhagen, European Coffee Trip and current public business ratings. External ratings are reference signals, not Worth the Fika scores.",
+  "cafes": [
+    {
+      "rank": 1,
+      "id": "hans-coffee",
+      "name": "H A N S Coffee",
+      "address": "Boldhusgade 6, 1062 København K",
+      "distanceKm": 0.8,
+      "externalRating": 4.6,
+      "externalReviews": 1212,
+      "kind": "Specialty coffee · bakery",
+      "why": "A central specialty-coffee benchmark with strong public ratings and recurring guide mentions.",
+      "sources": [
+        "Visit Copenhagen",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 2,
+      "id": "the-artisan",
+      "name": "The Artisan Copenhagen",
+      "address": "Sortedam Dossering 45A, 2200 København",
+      "distanceKm": 1.9,
+      "externalRating": 4.8,
+      "externalReviews": 609,
+      "kind": "Coffee roastery · brunch",
+      "why": "High-rated roastery café by the lakes with serious coffee and an easy linger-long atmosphere.",
+      "sources": [
+        "European Coffee Trip",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 3,
+      "id": "juno",
+      "name": "Juno the Bakery",
+      "address": "Aarhusgade 48, 2100 København",
+      "distanceKm": 3.5,
+      "externalRating": 4.6,
+      "externalReviews": 190,
+      "kind": "Bakery · coffee",
+      "why": "One of Copenhagen's destination bakeries; a strong pastry-first stop.",
+      "sources": [
+        "Visit Copenhagen",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 4,
+      "id": "cc-torvehallerne",
+      "name": "Coffee Collective · Torvehallerne",
+      "address": "Vendersgade 6D, 1363 København K",
+      "distanceKm": 0.9,
+      "externalRating": 4.5,
+      "externalReviews": 1939,
+      "kind": "Specialty coffee",
+      "why": "A flagship-level reference for Copenhagen specialty coffee in the centre.",
+      "sources": [
+        "Visit Copenhagen",
+        "European Coffee Trip",
+        "Public ratings"
+      ],
+      "aliases": [
+        "Coffee Collective"
+      ]
+    },
+    {
+      "rank": 5,
+      "id": "andersen-bakery",
+      "name": "Andersen Bakery · Islands Brygge",
+      "address": "Thorshavnsgade 26, 2300 København S",
+      "distanceKm": 1.7,
+      "externalRating": 4.6,
+      "externalReviews": 2999,
+      "kind": "Award-winning bakery · coffee",
+      "why": "A highly rated bakery with Danish-Japanese precision and an unusually deep pastry counter.",
+      "sources": [
+        "Visit Copenhagen",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 6,
+      "id": "sankt-peders",
+      "name": "Sankt Peders Bageri",
+      "address": "Sankt Peders Stræde 29, 1453 København K",
+      "distanceKm": 0.4,
+      "externalRating": 4.7,
+      "externalReviews": 432,
+      "kind": "Historic bakery · café",
+      "why": "Historic, central and famous for classic Copenhagen baking.",
+      "sources": [
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 7,
+      "id": "prolog-kodbyen",
+      "name": "Prolog Coffee Bar · Kødbyen",
+      "address": "Høkerboderne 16, 1712 København V",
+      "distanceKm": 1.1,
+      "externalRating": 4.2,
+      "externalReviews": 41,
+      "kind": "Specialty coffee",
+      "why": "A Copenhagen specialty-coffee institution in the Meatpacking District.",
+      "sources": [
+        "Visit Copenhagen",
+        "European Coffee Trip"
+      ],
+      "aliases": [
+        "Prolog Coffee"
+      ]
+    },
+    {
+      "rank": 8,
+      "id": "cc-sankt-hans",
+      "name": "Coffee Collective · Sankt Hans Torv",
+      "address": "Sankt Hans Torv 3, 2200 København N",
+      "distanceKm": 1.8,
+      "externalRating": 4.5,
+      "externalReviews": 205,
+      "kind": "Specialty coffee",
+      "why": "A neighborhood Coffee Collective with strong public ratings and a prime Nørrebro setting.",
+      "sources": [
+        "Visit Copenhagen",
+        "European Coffee Trip",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 9,
+      "id": "rondo",
+      "name": "Rondo",
+      "address": "Sjællandsgade 7, 2200 København N",
+      "distanceKm": 2.4,
+      "externalRating": 4.6,
+      "externalReviews": 309,
+      "kind": "Sourdough bakery · café",
+      "why": "Beloved neighborhood sourdough bakery with pastries, focaccia and Coffee Collective beans.",
+      "sources": [
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 10,
+      "id": "hart-gammel-kongevej",
+      "name": "Hart Bageri · Gammel Kongevej",
+      "address": "Gammel Kongevej 109, 1850 Frederiksberg C",
+      "distanceKm": 1,
+      "externalRating": 4.6,
+      "externalReviews": 104,
+      "kind": "Bakery · coffee",
+      "why": "Richard Hart's Copenhagen bakery is a must-test for laminated pastry and bread.",
+      "sources": [
+        "Visit Copenhagen",
+        "Public ratings"
+      ],
+      "aliases": [
+        "Hart Bageri"
+      ]
+    },
+    {
+      "rank": 11,
+      "id": "next-door",
+      "name": "Next Door Cafe",
+      "address": "Larsbjørnsstræde 23, 1454 København K",
+      "distanceKm": 0.4,
+      "externalRating": 4.6,
+      "externalReviews": 838,
+      "kind": "Café · breakfast",
+      "why": "A highly rated, characterful city-centre café with a loyal following.",
+      "sources": [
+        "Visit Copenhagen",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 12,
+      "id": "cc-bernikow",
+      "name": "Coffee Collective · Bernikow",
+      "address": "Kristen Bernikows Gade 2, 1105 København K",
+      "distanceKm": 1,
+      "externalRating": 4.4,
+      "externalReviews": 34,
+      "kind": "Specialty coffee",
+      "why": "Central Coffee Collective location that works well as a pure coffee benchmark.",
+      "sources": [
+        "European Coffee Trip",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 13,
+      "id": "prolog-frederiksberg",
+      "name": "Prolog Coffee Bar · Frederiksberg",
+      "address": "Marguerite Vibys Plads 8, 2000 Frederiksberg",
+      "distanceKm": 4.2,
+      "externalRating": 4.7,
+      "externalReviews": 35,
+      "kind": "Specialty coffee",
+      "why": "One of the strongest public ratings among Prolog locations inside the 5 km search.",
+      "sources": [
+        "European Coffee Trip",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 14,
+      "id": "lille-bakery",
+      "name": "Lille Bakery",
+      "address": "Refshalevej 213B, 1432 København K",
+      "distanceKm": 3.2,
+      "externalRating": 4.3,
+      "externalReviews": 46,
+      "kind": "Artisan bakery · café",
+      "why": "A destination bakery on Refshaleøen known for bread, pastries and a relaxed industrial setting.",
+      "sources": [
+        "Visit Copenhagen",
+        "European Coffee Trip",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 15,
+      "id": "andersen-maillard",
+      "name": "Andersen & Maillard · Nørrebrogade",
+      "address": "Nørrebrogade 62, 2200 København N",
+      "distanceKm": 1.9,
+      "externalRating": null,
+      "externalReviews": null,
+      "kind": "Coffee roastery · bakery",
+      "why": "A key Copenhagen crossover between serious coffee and serious laminated pastry.",
+      "sources": [
+        "Visit Copenhagen",
+        "European Coffee Trip"
+      ]
+    },
+    {
+      "rank": 16,
+      "id": "april",
+      "name": "April Coffee",
+      "address": "Ryesgade 86A, 2100 København Ø",
+      "distanceKm": 2.3,
+      "externalRating": null,
+      "externalReviews": null,
+      "kind": "Roastery · specialty coffee",
+      "why": "A globally known Copenhagen roaster; ideal for tasting modern light-roast coffee.",
+      "sources": [
+        "Visit Copenhagen",
+        "European Coffee Trip"
+      ]
+    },
+    {
+      "rank": 17,
+      "id": "darcys",
+      "name": "Darcy's Kaffe",
+      "address": "Rantzausgade 2, 2200 København N",
+      "distanceKm": 1.5,
+      "externalRating": null,
+      "externalReviews": null,
+      "kind": "Specialty coffee · pastry",
+      "why": "Frequently highlighted by Copenhagen guides for rotating top roasters, pastries and atmosphere.",
+      "sources": [
+        "Visit Copenhagen",
+        "European Coffee Trip"
+      ]
+    },
+    {
+      "rank": 18,
+      "id": "kaffedepartementet",
+      "name": "Kaffedepartementet",
+      "address": "Rentemestervej 64, 2400 København NV",
+      "distanceKm": 4.6,
+      "externalRating": 4.5,
+      "externalReviews": 18,
+      "kind": "Specialty coffee",
+      "why": "A less central but respected specialty-coffee destination and roastery.",
+      "sources": [
+        "Visit Copenhagen",
+        "European Coffee Trip",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 19,
+      "id": "collective-bakery",
+      "name": "Collective Bakery",
+      "address": "Nørrebrogade 176, 2200 København N",
+      "distanceKm": 2.8,
+      "externalRating": 4.3,
+      "externalReviews": 144,
+      "kind": "Bakery · coffee",
+      "why": "Coffee Collective's bakery arm: a natural place to test both cup and pastry in one review.",
+      "sources": [
+        "European Coffee Trip",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 20,
+      "id": "enghave-kaffe",
+      "name": "Enghave Kaffe",
+      "address": "Enghave Plads 3, 1670 København V",
+      "distanceKm": 1.7,
+      "externalRating": 4.5,
+      "externalReviews": 45,
+      "kind": "Neighborhood café",
+      "why": "A strong Vesterbro neighborhood café with solid public ratings.",
+      "sources": [
+        "European Coffee Trip",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 21,
+      "id": "kaf",
+      "name": "KAF",
+      "address": "Birkegade 21, 2200 København N",
+      "distanceKm": 1.9,
+      "externalRating": 4.4,
+      "externalReviews": 43,
+      "kind": "Vegan café · cakes",
+      "why": "A useful contrast to coffee-first venues, known for vegan cakes and relaxed Nørrebro hygge.",
+      "sources": [
+        "European Coffee Trip",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 22,
+      "id": "original-vandkunsten",
+      "name": "Original Coffee · Vandkunsten",
+      "address": "Vandkunsten 4, 1467 København K",
+      "distanceKm": 0.3,
+      "externalRating": 4.5,
+      "externalReviews": 70,
+      "kind": "Coffee bar",
+      "why": "Central, quiet and well rated; a useful benchmark for Copenhagen's established local chain.",
+      "sources": [
+        "European Coffee Trip",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 23,
+      "id": "original-bredgade",
+      "name": "Original Coffee · Bredgade",
+      "address": "Bredgade 36, 1260 København K",
+      "distanceKm": 1.6,
+      "externalRating": 4.4,
+      "externalReviews": 111,
+      "kind": "Coffee bar",
+      "why": "A highly reviewed central branch with a strong local-coffee-bar profile.",
+      "sources": [
+        "European Coffee Trip",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 24,
+      "id": "original-christianshavn",
+      "name": "Original Coffee · Christianshavn",
+      "address": "Overgaden Neden Vandet 41, 1414 København K",
+      "distanceKm": 1.4,
+      "externalRating": 4.3,
+      "externalReviews": 65,
+      "kind": "Coffee bar",
+      "why": "Canal-side neighborhood setting gives this branch a distinct reason to visit.",
+      "sources": [
+        "European Coffee Trip",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 25,
+      "id": "o12",
+      "name": "Ø12",
+      "address": "Øster Farimagsgade 12B, 2100 København Ø",
+      "distanceKm": 1.7,
+      "externalRating": null,
+      "externalReviews": null,
+      "kind": "Brunch · coffee",
+      "why": "A polished brunch-and-coffee stop highlighted by Copenhagen's official guide.",
+      "sources": [
+        "Visit Copenhagen"
+      ]
+    },
+    {
+      "rank": 26,
+      "id": "alice",
+      "name": "Alice",
+      "address": "Markmandsgade 1 / Amagerbrogade 5, 2300 København S",
+      "distanceKm": 1.9,
+      "externalRating": null,
+      "externalReviews": null,
+      "kind": "Coffee · ice cream · breakfast",
+      "why": "A distinctive coffee-and-ice-cream address with strong guide recognition.",
+      "sources": [
+        "Visit Copenhagen",
+        "European Coffee Trip"
+      ]
+    },
+    {
+      "rank": 27,
+      "id": "atelier-september",
+      "name": "Atelier September",
+      "address": "Gothersgade 30, 1123 København K",
+      "distanceKm": 1.1,
+      "externalRating": 3.5,
+      "externalReviews": 254,
+      "kind": "Café · breakfast",
+      "why": "An iconic Copenhagen café aesthetic and breakfast destination, worth reviewing beyond the hype.",
+      "sources": [
+        "European Coffee Trip",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 28,
+      "id": "la-cabra",
+      "name": "La Cabra",
+      "address": "Møntergade 3A, 1116 København K",
+      "distanceKm": 0.9,
+      "externalRating": null,
+      "externalReviews": null,
+      "kind": "Specialty coffee · bakery",
+      "why": "International specialty-coffee heavyweight with a central Copenhagen presence.",
+      "sources": [
+        "Visit Copenhagen",
+        "European Coffee Trip"
+      ]
+    },
+    {
+      "rank": 29,
+      "id": "orsa",
+      "name": "Orsa Coffee",
+      "address": "Vesterbrogade 46, 1620 København V",
+      "distanceKm": 1,
+      "externalRating": 4.1,
+      "externalReviews": 7,
+      "kind": "Coffee · pastry",
+      "why": "A Vesterbro coffee stop singled out by the city's official guide.",
+      "sources": [
+        "Visit Copenhagen",
+        "European Coffee Trip"
+      ]
+    },
+    {
+      "rank": 30,
+      "id": "buka",
+      "name": "BUKA · Store Kongensgade",
+      "address": "Store Kongensgade 18, 1264 København K",
+      "distanceKm": 1.3,
+      "externalRating": 4,
+      "externalReviews": 197,
+      "kind": "Bakery · café",
+      "why": "Popular central bakery with sourdough, pastries and strong visual appeal.",
+      "sources": [
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 31,
+      "id": "apotek57",
+      "name": "Apotek 57",
+      "address": "Fredericiagade 57, 1310 København K",
+      "distanceKm": 1.6,
+      "externalRating": 3.6,
+      "externalReviews": 41,
+      "kind": "Bakery · café",
+      "why": "A design-conscious bakery café with enough buzz to merit a first-hand Fika verdict.",
+      "sources": [
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 32,
+      "id": "lille-petra",
+      "name": "Lille Petra Café",
+      "address": "Kronprinsessegade 4, 1306 København K",
+      "distanceKm": 1.1,
+      "externalRating": 4.2,
+      "externalReviews": 9,
+      "kind": "Design café",
+      "why": "A calm design-led courtyard café with a distinctive atmosphere.",
+      "sources": [
+        "Visit Copenhagen",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 33,
+      "id": "social-brew",
+      "name": "Social Brew Copenhagen",
+      "address": "Vester Farimagsgade 3, 1606 København V",
+      "distanceKm": 0.5,
+      "externalRating": 4.4,
+      "externalReviews": 16,
+      "kind": "Specialty coffee · brunch",
+      "why": "Central specialty coffee and brunch with good public feedback.",
+      "sources": [
+        "European Coffee Trip",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 34,
+      "id": "roast-studiestraede",
+      "name": "ROAST Coffee · Studiestræde",
+      "address": "Studiestræde 16, 1455 København K",
+      "distanceKm": 0.4,
+      "externalRating": null,
+      "externalReviews": null,
+      "kind": "Coffee roastery",
+      "why": "A central roastery café that broadens the list beyond the biggest Copenhagen names.",
+      "sources": [
+        "European Coffee Trip"
+      ]
+    },
+    {
+      "rank": 35,
+      "id": "kontra",
+      "name": "Kontra Coffee",
+      "address": "Dag Hammarskjölds Allé 36, 2100 København Ø",
+      "distanceKm": 2.4,
+      "externalRating": null,
+      "externalReviews": null,
+      "kind": "Coffee roastery",
+      "why": "Long-running Copenhagen roastery with strong relevance for coffee-focused reviews.",
+      "sources": [
+        "European Coffee Trip"
+      ]
+    },
+    {
+      "rank": 36,
+      "id": "cc-jaegersborggade",
+      "name": "Coffee Collective · Jægersborggade",
+      "address": "Jægersborggade 57, 2200 København N",
+      "distanceKm": 2.7,
+      "externalRating": null,
+      "externalReviews": null,
+      "kind": "Specialty coffee",
+      "why": "A classic Jægersborggade specialty-coffee stop and one of the brand's best-known neighborhood locations.",
+      "sources": [
+        "European Coffee Trip"
+      ]
+    },
+    {
+      "rank": 37,
+      "id": "cc-godthaabsvej",
+      "name": "Coffee Collective · Godthåbsvej",
+      "address": "Godthåbsvej 34B, 2000 Frederiksberg",
+      "distanceKm": 2.6,
+      "externalRating": null,
+      "externalReviews": null,
+      "kind": "Specialty coffee · roastery",
+      "why": "A Coffee Collective location with roastery energy and strong coffee-nerd appeal.",
+      "sources": [
+        "European Coffee Trip"
+      ]
+    },
+    {
+      "rank": 38,
+      "id": "cc-carlsberg",
+      "name": "Coffee Collective · Carlsberg Byen",
+      "address": "Fadet 8, 1799 København V",
+      "distanceKm": 2.5,
+      "externalRating": null,
+      "externalReviews": null,
+      "kind": "Specialty coffee",
+      "why": "Modern Carlsberg Byen location and a useful comparison against the central branches.",
+      "sources": [
+        "European Coffee Trip"
+      ]
+    },
+    {
+      "rank": 39,
+      "id": "prolog-papiroeen",
+      "name": "Prolog Coffee Bar · Papirøen",
+      "address": "Papirøen 87, 1432 København K",
+      "distanceKm": 1.9,
+      "externalRating": null,
+      "externalReviews": null,
+      "kind": "Specialty coffee",
+      "why": "Prolog quality in the new Papirøen setting, adding a waterfront option to the list.",
+      "sources": [
+        "European Coffee Trip"
+      ]
+    },
+    {
+      "rank": 40,
+      "id": "yellow-bird",
+      "name": "Yellow Bird Coffee",
+      "address": "Amager Strandvej 108, 2300 København S",
+      "distanceKm": 4.2,
+      "externalRating": 5,
+      "externalReviews": 1,
+      "kind": "Specialty coffee",
+      "why": "A farther-east specialty stop that adds neighborhood range inside the 5 km radius.",
+      "sources": [
+        "European Coffee Trip"
+      ]
+    },
+    {
+      "rank": 41,
+      "id": "impact-roasters",
+      "name": "Impact Roasters · Valby",
+      "address": "Valby Langgade 128, 2500 Valby",
+      "distanceKm": 4.2,
+      "externalRating": 5,
+      "externalReviews": 11,
+      "kind": "Ethiopian coffee roastery",
+      "why": "Direct-trade Ethiopian focus makes this a distinctive tasting stop rather than another generic café.",
+      "sources": [
+        "European Coffee Trip",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 42,
+      "id": "gitz",
+      "name": "GITZ Coffee",
+      "address": "Landskronagade 27A, 2100 København Ø",
+      "distanceKm": 4.2,
+      "externalRating": null,
+      "externalReviews": null,
+      "kind": "Specialty coffee",
+      "why": "An independent Østerbro specialty-coffee candidate on the outer edge of the search radius.",
+      "sources": [
+        "European Coffee Trip"
+      ]
+    },
+    {
+      "rank": 43,
+      "id": "buna",
+      "name": "Buna & Co.",
+      "address": "Vesterbrogade 108, 1620 København V",
+      "distanceKm": 1.6,
+      "externalRating": 5,
+      "externalReviews": 1,
+      "kind": "Coffee bar",
+      "why": "A smaller Vesterbro option that can surface a less obvious Fika pick.",
+      "sources": [
+        "European Coffee Trip"
+      ]
+    },
+    {
+      "rank": 44,
+      "id": "norange",
+      "name": "Norange",
+      "address": "Blegdamsvej 4D, 2200 København N",
+      "distanceKm": 1.8,
+      "externalRating": null,
+      "externalReviews": null,
+      "kind": "Café · coffee",
+      "why": "A newer independent name in the specialty-guide circuit, useful for discovering beyond the classics.",
+      "sources": [
+        "European Coffee Trip"
+      ]
+    },
+    {
+      "rank": 45,
+      "id": "lokal",
+      "name": "Lokal",
+      "address": "Sønder Boulevard 59, 1720 København V",
+      "distanceKm": 1.5,
+      "externalRating": null,
+      "externalReviews": null,
+      "kind": "Neighborhood café",
+      "why": "A Vesterbro neighborhood café that fits the app's 'worth a detour?' approach.",
+      "sources": [
+        "European Coffee Trip"
+      ]
+    },
+    {
+      "rank": 46,
+      "id": "granola",
+      "name": "Granola",
+      "address": "Værnedamsvej 5, 1819 Frederiksberg C",
+      "distanceKm": 1.3,
+      "externalRating": 3.7,
+      "externalReviews": 569,
+      "kind": "Classic café · brunch",
+      "why": "A Copenhagen classic with huge review volume; worth testing for atmosphere as much as coffee.",
+      "sources": [
+        "Visit Copenhagen",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 47,
+      "id": "dyrehaven",
+      "name": "Café Dyrehaven",
+      "address": "Sønder Boulevard 72, 1720 København V",
+      "distanceKm": 1.7,
+      "externalRating": 3.9,
+      "externalReviews": 154,
+      "kind": "Classic café · bar",
+      "why": "Vesterbro institution and cosy-café guide regular, even though it is not a pure specialty-coffee bar.",
+      "sources": [
+        "Visit Copenhagen",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 48,
+      "id": "original-istedgade",
+      "name": "Original Coffee · Istedgade",
+      "address": "Istedgade 64, 1650 København V",
+      "distanceKm": 1.1,
+      "externalRating": null,
+      "externalReviews": null,
+      "kind": "Coffee bar",
+      "why": "A convenient Vesterbro Original Coffee branch with a distinct neighborhood feel.",
+      "sources": [
+        "European Coffee Trip"
+      ]
+    },
+    {
+      "rank": 49,
+      "id": "kala",
+      "name": "KALA Bar",
+      "address": "Ryesgade 25, 2200 København N",
+      "distanceKm": 1.9,
+      "externalRating": null,
+      "externalReviews": null,
+      "kind": "Family-run café · coffee",
+      "why": "Calm family-run Nørrebro café highlighted by Copenhagen's official coffee guide.",
+      "sources": [
+        "Visit Copenhagen",
+        "European Coffee Trip"
+      ]
+    },
+    {
+      "rank": 50,
+      "id": "original-illum",
+      "name": "Original Coffee · Illum Rooftop",
+      "address": "Østergade 60, 1100 København K",
+      "distanceKm": 0.8,
+      "externalRating": null,
+      "externalReviews": null,
+      "kind": "Coffee bar · rooftop",
+      "why": "The rooftop setting makes this branch more interesting than a standard chain stop.",
+      "sources": [
+        "European Coffee Trip"
+      ]
+    }
+  ]
+}
