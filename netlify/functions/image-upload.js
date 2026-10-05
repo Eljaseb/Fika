@@ -38,7 +38,7 @@ export default async (req) => {
   const store = getStore("fika-media");
   await store.set(key, await file.arrayBuffer());
 
-  return Response.json({ ok: true, url: "/api/images/" + key });
+  return Response.json({ ok: true, url: "/api/media/" + key });
 };
 
 export const config = { path: "/api/images/upload" };
