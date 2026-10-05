@@ -1,4 +1,3 @@
-
 import React, { useEffect, useMemo, useState } from "react";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import L from "leaflet";
@@ -6,20 +5,15 @@ import "leaflet/dist/leaflet.css";
 import "./public-v2.css";
 
 const CAFE_API = "/api/cafes";
-const SAVED_KEY = "wtfika:saved-v2";
-const GEO_PREFIX = "wtfika:geo:";
+const SAVED_KEY = "wtfika:saved-v3";
+const GEO_PREFIX = "wtfika:geo:v3:";
 
 function normalize(value="") {
-  return value
-    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
-    .toLowerCase()
-    .replace(/&/g,"and")
-    .replace(/[^a-z0-9]+/g," ")
-    .trim();
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/&/g,"and").replace(/[^a-z0-9]+/g," ").trim();
 }
 
 function avg(values) {
-  const nums = values.map(Number).filter((n) => Number.isFinite(n) && n > 0);
+  const nums = values.map(Number).filter(n => Number.isFinite(n) && n > 0);
   return nums.length ? nums.reduce((a,b)=>a+b,0)/nums.length : 0;
 }
 
@@ -30,44 +24,62 @@ function categoryAverage(category) {
 function fikaScore(cafe) {
   const drink = categoryAverage(cafe?.drink);
   const pastry = categoryAverage(cafe?.pastry);
-  const supporting = avg([cafe?.atmosphere, cafe?.service, cafe?.value]);
+  const supporting = avg([cafe?.atmosphere,cafe?.service,cafe?.value]);
   const hero = avg([drink,pastry].filter(Boolean));
   const blended = hero && supporting ? hero * .72 + supporting * .28 : hero || supporting || 0;
   return blended ? Math.round(blended * 20) : 0;
 }
 
-function Mark() {
-  return <div className="v2-mark">F</div>;
+function fika10(cafe) {
+  const score = fikaScore(cafe);
+  return score ? (score / 10).toFixed(1) : null;
 }
 
-function PinIcon({rated=false}) {
-  return <span className={rated ? "v2-status rated" : "v2-status"}>{rated ? "Rated by Worth the Fika" : "Not rated yet"}</span>;
+function category10(category) {
+  const score = categoryAverage(category);
+  return score ? (score * 2).toFixed(1) : null;
+}
+
+function Mark() {
+  return <div className="wtf-mark"><span>☕</span></div>;
 }
 
 function Heart({filled=false}) {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.25s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.85c0 5.6-7.5 10.2-7.5 10.2Z" fill={filled?"currentColor":"none"} stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/></svg>;
 }
 
-function matchReview(catalogCafe, reviews) {
-  const byId = reviews.find((r) => r.catalogId && r.catalogId === catalogCafe.id);
+function matchReview(catalogCafe,reviews) {
+  const byId = reviews.find(r => r.catalogId && r.catalogId === catalogCafe.id);
   if (byId) return byId;
-  const names = [catalogCafe.name, ...(catalogCafe.aliases || [])].map(normalize);
-  return reviews.find((r) => names.includes(normalize(r.name)));
+  const names = [catalogCafe.name,...(catalogCafe.aliases || [])].map(normalize);
+  return reviews.find(r => names.includes(normalize(r.name)));
+}
+
+function coverOf(review) {
+  return Array.isArray(review?.imgs) ? review.imgs.find(Boolean) : null;
+}
+
+function initials(name="Fika") {
+  return String(name).split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join("").toUpperCase();
 }
 
 function publicRatingText(cafe) {
   if (!cafe.rank && cafe.sources?.includes("Worth the Fika")) return "Your published review";
   if (!cafe.externalRating) return "Guide pick";
-  return `${Number(cafe.externalRating).toFixed(1)}${cafe.externalReviews ? ` · ${cafe.externalReviews.toLocaleString()} public reviews` : ""}`;
+  return `${Number(cafe.externalRating).toFixed(1)} ★${cafe.externalReviews ? ` · ${cafe.externalReviews.toLocaleString()} reviews` : ""}`;
 }
 
-function mapIcon(score) {
+function firstTag(cafe,review) {
+  return review?.bestFor?.[0] || String(cafe.kind || "Café").split("·")[0].trim();
+}
+
+function mapIcon(rated,score) {
   return L.divIcon({
-    className: "fika-map-icon-wrap",
-    html: `<div class="fika-map-icon">${score || "F"}</div>`,
-    iconSize: [42,42],
-    iconAnchor: [21,21],
-    popupAnchor: [0,-18]
+    className:"wtf-map-icon-wrap",
+    html:`<div class="wtf-map-pin ${rated ? "rated" : "todo"}"><span>☕</span>${rated && score ? `<b>${score}</b>` : ""}</div>`,
+    iconSize:[44,52],
+    iconAnchor:[22,50],
+    popupAnchor:[0,-45]
   });
 }
 
@@ -79,123 +91,156 @@ async function geocode(address) {
     if (cached?.lat && cached?.lng) return cached;
   } catch {}
   try {
-    const url = "https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=dk&q=" + encodeURIComponent(address + ", Copenhagen, Denmark");
-    const res = await fetch(url, { headers: { "Accept": "application/json" } });
-    const rows = await res.json();
-    if (!rows?.[0]) return null;
-    const out = { lat:Number(rows[0].lat), lng:Number(rows[0].lon) };
-    localStorage.setItem(key, JSON.stringify(out));
+    const url = "https://photon.komoot.io/api/?limit=1&q=" + encodeURIComponent(address + ", Copenhagen, Denmark");
+    const res = await fetch(url,{headers:{Accept:"application/json"}});
+    const data = await res.json();
+    const coords = data?.features?.[0]?.geometry?.coordinates;
+    if (!coords) return null;
+    const out = {lat:Number(coords[1]),lng:Number(coords[0])};
+    localStorage.setItem(key,JSON.stringify(out));
     return out;
   } catch {
     return null;
   }
 }
 
-function RatedMap({items}) {
+function CafeMap({items,allMode=false,onOpen}) {
   const [points,setPoints] = useState([]);
-  useEffect(() => {
-    let cancelled = false;
-    (async() => {
-      const next = [];
-      for (const item of items) {
-        const address = item.review.address || item.catalog.address;
-        const point = item.review.lat && item.review.lng
-          ? {lat:Number(item.review.lat),lng:Number(item.review.lng)}
-          : await geocode(address);
-        if (point) next.push({...item, ...point});
-      }
-      if (!cancelled) setPoints(next);
-    })();
-    return () => { cancelled = true; };
-  }, [items]);
 
-  return (
-    <div className="rated-map-shell">
-      <MapContainer center={[55.6761,12.5683]} zoom={12.5} scrollWheelZoom={true} className="rated-map">
-        <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        {points.map((p) => (
-          <Marker key={p.catalog.id} position={[p.lat,p.lng]} icon={mapIcon(fikaScore(p.review))}>
-            <Popup>
-              <strong>{p.catalog.name}</strong><br/>
-              Worth the Fika: {fikaScore(p.review) || "–"}/100<br/>
-              {p.catalog.address}
-            </Popup>
-          </Marker>
-        ))}
-      </MapContainer>
-      {!points.length && <div className="map-loading">Locating your rated cafés…</div>}
+  useEffect(()=>{
+    let cancelled = false;
+    (async()=>{
+      const direct = [];
+      const needGeo = [];
+      for (const item of items) {
+        const lat = Number(item.review?.lat ?? item.catalog?.lat);
+        const lng = Number(item.review?.lng ?? item.catalog?.lng);
+        if (Number.isFinite(lat) && Number.isFinite(lng) && lat && lng) direct.push({...item,lat,lng});
+        else needGeo.push(item);
+      }
+      if (!cancelled) setPoints(direct);
+      const workers = Array.from({length:Math.min(6,needGeo.length)}, async(_,workerIndex)=>{
+        for (let i=workerIndex;i<needGeo.length;i+=6) {
+          const item = needGeo[i];
+          const point = await geocode(item.review?.address || item.catalog.address);
+          if (point && !cancelled) {
+            setPoints(prev => prev.some(p=>p.catalog.id===item.catalog.id) ? prev : [...prev,{...item,...point}]);
+          }
+        }
+      });
+      await Promise.all(workers);
+    })();
+    return ()=>{cancelled=true};
+  },[items]);
+
+  return <div className="map-shell">
+    <MapContainer center={[55.6761,12.5683]} zoom={12.4} scrollWheelZoom className="wtf-map">
+      <TileLayer attribution='&copy; OpenStreetMap &copy; CARTO' url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"/>
+      {points.map(point=>{
+        const rated = Boolean(point.review);
+        const score = rated ? fika10(point.review) : null;
+        return <Marker key={point.catalog.id} position={[point.lat,point.lng]} icon={mapIcon(rated,score)}>
+          <Popup>
+            <div className="map-popup">
+              <strong>{point.catalog.name}</strong>
+              <span>{rated ? `Worth the Fika · ${score}/10` : "Not rated yet"}</span>
+              <small>{point.catalog.address}</small>
+              <button onClick={()=>onOpen?.(point.catalog)}>View café</button>
+            </div>
+          </Popup>
+        </Marker>;
+      })}
+    </MapContainer>
+    <div className="map-legend">
+      <span><i className="legend-dot rated"/>Rated {items.filter(x=>x.review).length}</span>
+      {allMode && <span><i className="legend-dot todo"/>To taste {items.filter(x=>!x.review).length}</span>}
     </div>
-  );
+    {points.length < items.length && <div className="map-progress">Locating cafés · {points.length}/{items.length}</div>}
+  </div>;
 }
 
-function CatalogRow({cafe,review,saved,onSave,onOpen}) {
+function CafeThumb({cafe,review}) {
+  const cover = coverOf(review);
+  return <div className="cafe-thumb">
+    {cover ? <img src={cover} alt="" loading="lazy"/> : <div className="thumb-fallback"><span>{initials(cafe.name)}</span><small>{cafe.rank ? `#${cafe.rank}` : "WT"}</small></div>}
+  </div>;
+}
+
+function CatalogCard({cafe,review,saved,onSave,onOpen}) {
   const rated = Boolean(review);
-  return (
-    <article className="catalog-row">
-      <div className="rank-no">{cafe.rank ? String(cafe.rank).padStart(2,"0") : "WT"}</div>
-      <div className="catalog-main">
-        <div className="catalog-title-line">
-          <div>
-            <h3>{cafe.name}</h3>
-            <p>{cafe.address}</p>
-          </div>
-          <PinIcon rated={rated}/>
+  const score = rated ? fika10(review) : null;
+  return <article className={`cafe-list-card ${rated ? "is-rated" : ""}`}>
+    <button className="card-open-hit" onClick={()=>onOpen(cafe)} aria-label={`Open ${cafe.name}`}/>
+    <CafeThumb cafe={cafe} review={review}/>
+    <div className="cafe-list-copy">
+      <div className="cafe-name-row">
+        <div>
+          <h3>{cafe.name}</h3>
+          <p>⌖ {cafe.address}</p>
         </div>
-        <p className="catalog-why">{cafe.why}</p>
-        <div className="catalog-meta">
-          <span>{cafe.kind}</span>
-          <span>{publicRatingText(cafe)}</span>
-          {cafe.distanceKm != null && <span>≈ {cafe.distanceKm} km from centre</span>}
-          {rated && <span className="own-score">WT Fika {fikaScore(review)}/100</span>}
-        </div>
+        {rated ? <div className="mini-score"><strong>{score}</strong><span>/10</span></div> : <span className="rank-chip">#{cafe.rank}</span>}
       </div>
-      <div className="catalog-actions">
-        <button className={saved ? "save-list saved" : "save-list"} onClick={()=>onSave(cafe.id)} aria-label="Save"><Heart filled={saved}/></button>
-        <button className="row-open" onClick={()=>onOpen(cafe)}>View</button>
+      <div className="tag-line">
+        <span>{firstTag(cafe,review)}</span>
+        {review?.scene && <span>{review.scene}</span>}
+        {rated && <span className="rated-tag">✓ Rated</span>}
       </div>
-    </article>
-  );
+      {!rated && <p className="public-signal">{publicRatingText(cafe)} · {cafe.distanceKm != null ? `≈ ${cafe.distanceKm} km from centre` : "Copenhagen"}</p>}
+    </div>
+    <button className={`bookmark ${saved ? "saved" : ""}`} onClick={(e)=>{e.stopPropagation();onSave(cafe.id)}} aria-label="Save"><Heart filled={saved}/></button>
+  </article>;
+}
+
+function TasteRow({emoji,title,detail,score}) {
+  if (!title) return null;
+  return <div className="taste-highlight">
+    <div className="taste-icon">{emoji}</div>
+    <div><strong>{title}</strong>{detail && <p>{detail}</p>}</div>
+    <b>{score || "–"}</b>
+  </div>;
 }
 
 function Detail({cafe,review,onClose}) {
   if (!cafe) return null;
-  const score = review ? fikaScore(review) : null;
-  const cover = Array.isArray(review?.imgs) ? review.imgs[0] : null;
-  return (
-    <div className="v2-modal-backdrop" onMouseDown={onClose}>
-      <section className="v2-modal" onMouseDown={(e)=>e.stopPropagation()}>
-        <button className="v2-close" onClick={onClose}>×</button>
-        <div className="v2-modal-hero">
-          {cover ? <img src={cover} alt=""/> : <div className="v2-placeholder">{cafe.name.split(/\s+/).slice(0,2).map(x=>x[0]).join("")}</div>}
-          <div className="v2-modal-overlay"><span>{cafe.rank ? `#${cafe.rank} · Copenhagen 50` : "Worth the Fika review"}</span><h2>{cafe.name}</h2></div>
+  const cover = coverOf(review);
+  const score = review ? fika10(review) : null;
+  const worthTrip = review && fikaScore(review) >= 80;
+  return <div className="detail-backdrop" onMouseDown={onClose}>
+    <section className="editorial-detail" onMouseDown={e=>e.stopPropagation()}>
+      <button className="detail-close" onClick={onClose}>×</button>
+      <div className="detail-hero">
+        {cover ? <img src={cover} alt={cafe.name}/> : <div className="detail-fallback">{initials(cafe.name)}</div>}
+        <div className="photo-chip left">⌖ {review?.city || "Copenhagen"}{review?.country ? `, ${review.country}` : ""}</div>
+        {(review?.scene || firstTag(cafe,review)) && <div className="photo-chip right">☀ {review?.scene || firstTag(cafe,review)}</div>}
+        {review && <div className="hero-score"><strong>{score}</strong><span>FIKA SCORE</span></div>}
+      </div>
+      <div className="detail-sheet">
+        <div className="detail-heading">
+          <p className="detail-kicker">{cafe.rank ? `Copenhagen 50 · #${cafe.rank}` : "Worth the Fika review"}</p>
+          <h2>{cafe.name} <span>{review?.country==="Sweden"?"🇸🇪":"🇩🇰"}</span></h2>
+          {review ? <div className="detail-badges">
+            {worthTrip && <span className="worth-trip">✓ WORTH THE TRIP</span>}
+            {(review.bestFor || []).slice(0,3).map(tag=><span key={tag}>{tag}</span>)}
+          </div> : <span className="not-rated-pill">Not rated by Worth the Fika yet</span>}
         </div>
-        <div className="v2-modal-body">
-          <div className="detail-status-row">
-            <PinIcon rated={Boolean(review)}/>
-            <span>{publicRatingText(cafe)}</span>
+        {review ? <>
+          <div className="taste-section">
+            <p className="section-label">TASTING HIGHLIGHTS</p>
+            <TasteRow emoji="☕" title={review.drink?.type} detail={review.drink?.note || review.drink?.mod} score={category10(review.drink)}/>
+            <TasteRow emoji="🥐" title={review.pastry?.type} detail={review.pastry?.note || review.pastry?.subtype} score={category10(review.pastry)}/>
           </div>
-          <p className="detail-address">{cafe.address}</p>
-          <p className="detail-why">{cafe.why}</p>
-          {review ? (
-            <div className="review-box">
-              <div className="review-score"><strong>{score}</strong><span>/100</span></div>
-              <div><p className="eyebrow-v2">Worth the Fika verdict</p><h3>{review.take || review.reason || "Rated by Worth the Fika"}</h3><p>{review.reason || ""}</p></div>
-            </div>
-          ) : (
-            <div className="not-rated-box">
-              <h3>Not rated by Worth the Fika yet.</h3>
-              <p>This café is in the researched Copenhagen shortlist, but it does not have an in-app tasting review yet.</p>
-              <a href={`/?admin=1&cafe=${encodeURIComponent(cafe.id)}`}>Rate this café in Creator Studio →</a>
-            </div>
-          )}
-          <div className="detail-links">
-            <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cafe.name+" "+cafe.address)}`} target="_blank" rel="noreferrer">Open in Maps</a>
-            <a href={`/?admin=1&cafe=${encodeURIComponent(cafe.id)}`}>Creator Studio</a>
-          </div>
+          {(review.reason || review.take) && <p className="detail-verdict">{review.reason || review.take}</p>}
+        </> : <>
+          <p className="detail-verdict">{cafe.why}</p>
+          <div className="research-signal"><strong>{publicRatingText(cafe)}</strong><span>Public ratings are only a discovery signal. The Fika score appears after a real tasting review.</span></div>
+        </>}
+        <div className="detail-footer">
+          <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cafe.name+" "+cafe.address)}`} target="_blank" rel="noreferrer">Open in Maps</a>
+          <span>Worth the Fika</span>
         </div>
-      </section>
-    </div>
-  );
+      </div>
+    </section>
+  </div>;
 }
 
 export default function PublicAppV2() {
@@ -209,120 +254,105 @@ export default function PublicAppV2() {
     try { return JSON.parse(localStorage.getItem(SAVED_KEY) || "[]"); } catch { return []; }
   });
 
-  useEffect(() => { localStorage.setItem(SAVED_KEY,JSON.stringify(saved)); }, [saved]);
+  useEffect(()=>localStorage.setItem(SAVED_KEY,JSON.stringify(saved)),[saved]);
 
-  useEffect(() => {
-    let cancelled = false;
+  useEffect(()=>{
+    let cancelled=false;
     (async()=>{
-      try {
-        const [catRes,revRes] = await Promise.all([fetch("/copenhagen50.json"),fetch(CAFE_API)]);
-        const cat = await catRes.json();
-        const rev = revRes.ok ? await revRes.json() : [];
-        if (!cancelled) {
-          setCatalog(cat?.cafes || []);
-          setReviews(Array.isArray(rev) ? rev : []);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+      try{
+        const [catRes,revRes]=await Promise.all([fetch("/copenhagen50.json"),fetch(CAFE_API)]);
+        const cat=await catRes.json();
+        const rev=revRes.ok?await revRes.json():[];
+        if(!cancelled){setCatalog(cat?.cafes||[]);setReviews(Array.isArray(rev)?rev:[])}
+      } finally { if(!cancelled)setLoading(false) }
     })();
-    return () => { cancelled = true; };
-  }, []);
+    return()=>{cancelled=true};
+  },[]);
 
-  const enriched = useMemo(() => catalog.map(cafe => ({catalog:cafe,review:matchReview(cafe,reviews)})), [catalog,reviews]);
-  const ratedFrom50 = useMemo(() => enriched.filter(x=>x.review), [enriched]);
-  const customRated = useMemo(() => reviews
-    .filter(review => !enriched.some(x => x.review && String(x.review.id) === String(review.id)))
-    .map((review, index) => ({
-      catalog: {
-        id: "custom-" + review.id,
-        rank: null,
-        name: review.name || "Untitled café",
-        address: review.address || [review.city,review.country].filter(Boolean).join(", "),
-        distanceKm: null,
-        externalRating: null,
-        externalReviews: null,
-        kind: "Worth the Fika review",
-        why: review.reason || review.take || "Personally rated in Worth the Fika.",
-        sources: ["Worth the Fika"]
-      },
-      review
-    })), [reviews,enriched]);
-  const rated = useMemo(() => [...ratedFrom50, ...customRated], [ratedFrom50,customRated]);
-  const visible = useMemo(() => {
-    let list = view === "rated" ? rated : view === "saved" ? enriched.filter(x=>saved.includes(x.catalog.id)) : enriched;
-    const q = normalize(query);
-    if (q) list = list.filter(x => normalize([x.catalog.name,x.catalog.address,x.catalog.kind,x.catalog.why].join(" ")).includes(q));
+  const enriched = useMemo(()=>catalog.map(cafe=>({catalog:cafe,review:matchReview(cafe,reviews)})),[catalog,reviews]);
+  const ratedFrom50 = useMemo(()=>enriched.filter(x=>x.review),[enriched]);
+  const customRated = useMemo(()=>reviews.filter(review=>!enriched.some(x=>x.review&&String(x.review.id)===String(review.id))).map(review=>({
+    catalog:{id:"custom-"+review.id,rank:null,name:review.name||"Untitled café",address:review.address||[review.city,review.country].filter(Boolean).join(", "),distanceKm:null,externalRating:null,externalReviews:null,kind:"Worth the Fika review",why:review.reason||review.take||"Personally rated in Worth the Fika.",sources:["Worth the Fika"]},
+    review
+  })),[reviews,enriched]);
+  const rated = useMemo(()=>[...ratedFrom50,...customRated].sort((a,b)=>fikaScore(b.review)-fikaScore(a.review)),[ratedFrom50,customRated]);
+
+  const visible = useMemo(()=>{
+    let list = view==="rated" ? rated : view==="saved" ? enriched.filter(x=>saved.includes(x.catalog.id)) : enriched;
+    const q=normalize(query);
+    if(q) list=list.filter(x=>normalize([x.catalog.name,x.catalog.address,x.catalog.kind,x.catalog.why,x.review?.scene,...(x.review?.bestFor||[])].join(" ")).includes(q));
     return list;
-  }, [view,rated,enriched,saved,query]);
+  },[view,rated,enriched,saved,query]);
 
-  function toggleSave(id) {
-    setSaved(prev=>prev.includes(id)?prev.filter(x=>x!==id):[...prev,id]);
-  }
+  const selectedReview = selected ? (matchReview(selected,reviews) || customRated.find(x=>x.catalog.id===selected.id)?.review) : null;
+  const toggleSave=id=>setSaved(prev=>prev.includes(id)?prev.filter(x=>x!==id):[...prev,id]);
 
-  const selectedReview = selected ? matchReview(selected,reviews) : null;
-
-  return (
-    <div className="v2-shell">
-      <header className="v2-header">
-        <button className="v2-brand" onClick={()=>setView("all")}><Mark/><span><b>WORTH THE</b> FIKA</span></button>
-        <nav>
-          <button className={view==="all"?"active":""} onClick={()=>setView("all")}>Copenhagen 50</button>
-          <button className={view==="rated"?"active":""} onClick={()=>setView("rated")}>Rated <span>{rated.length}</span></button>
-          <button className={view==="saved"?"active":""} onClick={()=>setView("saved")}>Saved <span>{saved.length}</span></button>
-          <a href="/?admin=1">Creator</a>
-        </nav>
-      </header>
-
-      <main className="v2-main">
-        <section className="v2-hero">
-          <p className="eyebrow-v2">Copenhagen · researched within ~5 km of the city centre</p>
-          <h1>50 cafés worth knowing.<br/><em>Your ratings decide which are truly worth the fika.</em></h1>
-          <p>We started with the strongest café and specialty-coffee candidates from Copenhagen guides and current public ratings. A public rating is only a discovery signal — the red badge appears only after a real Worth the Fika tasting review.</p>
-          <div className="v2-stats">
-            <div><strong>50</strong><span>researched cafés</span></div>
-            <div><strong>{rated.length}</strong><span>your published ratings</span></div>
-            <div><strong>{Math.max(0,50-ratedFrom50.length)}</strong><span>Top 50 still to taste</span></div>
-          </div>
-        </section>
-
-        <section className="v2-toolbar">
-          <div className="v2-tabs">
-            <button className={view==="all"?"active":""} onClick={()=>setView("all")}>All 50</button>
-            <button className={view==="rated"?"active":""} onClick={()=>setView("rated")}>Rated by Worth the Fika</button>
-            <button className={view==="saved"?"active":""} onClick={()=>setView("saved")}>Saved</button>
-          </div>
-          <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search café, neighbourhood, bakery…"/>
-        </section>
-
-        {view==="rated" && <section className="rated-map-section">
-          <div className="section-copy"><p className="eyebrow-v2">Your tasting map</p><h2>Where you have already been.</h2><p>Every published Worth the Fika review appears here — including cafés outside the Copenhagen 50. Reviews linked to the shortlist inherit the exact branch address.</p></div>
-          <RatedMap items={rated}/>
-        </section>}
-
-        <section className="catalog-section">
-          <div className="catalog-heading">
-            <div><p className="eyebrow-v2">{view==="rated"?"Your rated cafés":view==="saved"?"Your saved cafés":"Research shortlist"}</p><h2>{loading?"Loading…":`${visible.length} cafés`}</h2></div>
-            <p>{view==="all" ? "Ordered by a mix of café relevance, guide recognition, public reputation and distinctiveness — not by Google score alone." : view==="rated" ? "These have a real in-app Worth the Fika tasting score." : "Places you marked to remember."}</p>
-          </div>
-          <div className="catalog-list">
-            {visible.map(({catalog:cafe,review}) => <CatalogRow key={cafe.id} cafe={cafe} review={review} saved={saved.includes(cafe.id)} onSave={toggleSave} onOpen={setSelected}/>)}
-          </div>
-        </section>
-
-        <section className="research-note">
-          <div><p className="eyebrow-v2">How this list works</p><h2>Research first. Taste second.</h2></div>
-          <p>The shortlist combines current guide coverage and public business ratings. Those external signals help decide where to go next, but they never become a Worth the Fika score. Only your own tasting review does.</p>
-        </section>
-      </main>
-
-      <nav className="v2-mobile-nav">
+  return <div className="wtf-shell">
+    <header className="wtf-header">
+      <button className="wtf-brand" onClick={()=>setView("all")}><Mark/><span>Worth the Fika</span></button>
+      <nav>
         <button className={view==="all"?"active":""} onClick={()=>setView("all")}>Top 50</button>
-        <button className={view==="rated"?"active":""} onClick={()=>setView("rated")}>Rated · {rated.length}</button>
-        <button className={view==="saved"?"active":""} onClick={()=>setView("saved")}>Saved · {saved.length}</button>
+        <button className={view==="rated"?"active":""} onClick={()=>setView("rated")}>Reviewed <i>{rated.length}</i></button>
+        <button className={view==="saved"?"active":""} onClick={()=>setView("saved")}>Saved <i>{saved.length}</i></button>
+        <a className="admin-link" href="/?admin=1">Admin / Review</a>
       </nav>
+    </header>
 
-      <Detail cafe={selected} review={selectedReview} onClose={()=>setSelected(null)}/>
-    </div>
-  );
+    <main className="wtf-main">
+      <section className="app-intro">
+        <div>
+          <p className="eyebrow">COPENHAGEN · WITHIN ~5 KM OF THE CENTRE</p>
+          <h1>{view==="rated" ? "Reviewed cafés" : view==="saved" ? "Saved for your next fika" : "Copenhagen Top 50"}</h1>
+          <p>{view==="rated" ? "Real cafés. Honest reviews. Better fika moments." : view==="saved" ? "Your personal shortlist." : "Research finds the places. Real tasting decides what is truly worth the fika."}</p>
+        </div>
+        <div className="intro-counts">
+          <div><strong>50</strong><span>Top 50</span></div>
+          <div><strong>{ratedFrom50.length}</strong><span>Reviewed</span></div>
+          <div><strong>{Math.max(0,50-ratedFrom50.length)}</strong><span>To go</span></div>
+        </div>
+      </section>
+
+      <section className="filter-row">
+        <div className="segmented">
+          <button className={view==="all"?"active":""} onClick={()=>setView("all")}>Top 50</button>
+          <button className={view==="rated"?"active":""} onClick={()=>setView("rated")}>Reviewed</button>
+          <button className={view==="saved"?"active":""} onClick={()=>setView("saved")}>Saved</button>
+        </div>
+        <label className="search-field"><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search café, neighbourhood, vibe…"/></label>
+      </section>
+
+      {(view==="all" || view==="rated") && <section className="map-section">
+        <div className="map-copy">
+          <p className="eyebrow">{view==="all"?"THE 50 ON A MAP":"YOUR TASTING MAP"}</p>
+          <h2>{view==="all"?"Plan your next café stop.":"Where you have already been."}</h2>
+          <p>{view==="all"?"Green pins are cafés already reviewed by Worth the Fika. Cream pins are still waiting for a real tasting.":"Only your published reviews appear here."}</p>
+        </div>
+        <CafeMap items={view==="all"?enriched:rated} allMode={view==="all"} onOpen={setSelected}/>
+      </section>}
+
+      <section className="list-section">
+        <div className="list-heading">
+          <div><p className="eyebrow">{view==="rated"?"YOUR REVIEWS":view==="saved"?"SAVED PLACES":"THE SHORTLIST"}</p><h2>{loading?"Loading…":`${visible.length} cafés`}</h2></div>
+          <p>{view==="all"?"A curated shortlist built from guide recognition, current public reputation and distinctiveness.":"Tap a café to open its full review card."}</p>
+        </div>
+        <div className="cafe-cards">
+          {visible.map(({catalog:cafe,review})=><CatalogCard key={cafe.id} cafe={cafe} review={review} saved={saved.includes(cafe.id)} onSave={toggleSave} onOpen={setSelected}/>)}
+        </div>
+      </section>
+
+      <section className="editorial-note">
+        <div><Mark/><div><p className="eyebrow">THE FIKA STANDARD</p><h2>Public ratings help us choose where to go. They never become the Fika score.</h2></div></div>
+        <p>Every Worth the Fika score comes from an actual tasting review in the private Creator Studio.</p>
+      </section>
+    </main>
+
+    <nav className="mobile-nav">
+      <button className={view==="all"?"active":""} onClick={()=>setView("all")}><span>⌂</span>Top 50</button>
+      <button className={view==="rated"?"active":""} onClick={()=>setView("rated")}><span>☕</span>Reviewed</button>
+      <button className={view==="saved"?"active":""} onClick={()=>setView("saved")}><span>♡</span>Saved</button>
+      <a href="/?admin=1"><span>•••</span>Admin</a>
+    </nav>
+
+    <Detail cafe={selected} review={selectedReview} onClose={()=>setSelected(null)}/>
+  </div>;
 }
