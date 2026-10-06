@@ -116,7 +116,7 @@ function ContactModal({open,onClose,city}) {
     e.preventDefault();
     setStatus("Sending…");
     const body=new URLSearchParams({
-      "form-name":"fika-business-interest",
+      "form-name":"fika-contact",
       "subject":"New Worth the Fika message",
       "business_name":"",
       "contact_name":name,
