@@ -72,7 +72,7 @@ function category10(category) {
 }
 
 function Mark() {
-  return <div className="wtf-mark"><img src="/icons/fika-icon-192-v2.png" alt="" width="192" height="192" /></div>;
+  return <div className="wtf-mark"><img src="/icons/fika-icon-192-v3.png" alt="" width="192" height="192" /></div>;
 }
 
 function Heart({filled=false}) {
