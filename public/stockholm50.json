@@ -1,0 +1,738 @@
+{
+  "researchedOn": "2026-10-06",
+  "center": "Stockholm city centre",
+  "centerLat": 59.3293,
+  "centerLng": 18.0686,
+  "radiusKm": 5,
+  "method": "Curated from Visit Stockholm, Thatsup, current public business ratings and café/roastery listings. Ranking balances coffee quality, baking, public reputation, distinctiveness and destination value. External ratings are discovery signals, not Worth the Fika scores.",
+  "cafes": [
+    {
+      "rank": 1,
+      "id": "drop-coffee",
+      "name": "Drop Coffee",
+      "address": "Wollmar Yxkullsgatan 10, 118 50 Stockholm",
+      "distanceKm": 0.9,
+      "externalRating": 4.4,
+      "externalReviews": 2038,
+      "kind": "Specialty coffee · roastery",
+      "why": "One of Stockholm’s defining specialty-coffee addresses, known for light-roast sourcing, precision brewing and a serious coffee-first identity.",
+      "sources": [
+        "Visit Stockholm",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 2,
+      "id": "svedjan-zinkensdamm",
+      "name": "Svedjan Bageri · Zinkensdamm",
+      "address": "Brännkyrkagatan 93, 117 26 Stockholm",
+      "distanceKm": 1.6,
+      "externalRating": 4.7,
+      "externalReviews": 434,
+      "kind": "Bakery · specialty coffee",
+      "why": "A modern fika benchmark where acclaimed buns and sourdough are matched with unusually thoughtful coffee.",
+      "sources": [
+        "Visit Stockholm",
+        "Thatsup",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 3,
+      "id": "pascal-roastery",
+      "name": "Pascal Café & Roastery",
+      "address": "Gävlegatan 22, 113 30 Stockholm",
+      "distanceKm": 3.1,
+      "externalRating": 5,
+      "externalReviews": 3,
+      "kind": "Specialty coffee · roastery",
+      "why": "Pascal’s roastery café brings roasting and brewing together and is singled out by Swedish coffee champion Lakis Psomas.",
+      "sources": [
+        "Visit Stockholm",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 4,
+      "id": "lillebrors",
+      "name": "Lillebrors Bageri",
+      "address": "Rörstrandsgatan 10, 113 40 Stockholm",
+      "distanceKm": 2.6,
+      "externalRating": 4.8,
+      "externalReviews": 86,
+      "kind": "Bakery · pastry",
+      "why": "A Birkastan favourite with strong public ratings and a reputation for exceptional buns, semlor and laminated pastry.",
+      "sources": [
+        "Visit Stockholm",
+        "Thatsup",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 5,
+      "id": "nordic-brew-lab",
+      "name": "Nordic Brew Lab",
+      "address": "Torsgatan 46, 113 62 Stockholm",
+      "distanceKm": 2.6,
+      "externalRating": 5,
+      "externalReviews": 47,
+      "kind": "Specialty coffee · brew lab",
+      "why": "One of Stockholm’s most coffee-nerdy stops, with experimental brewing, water recipes and rotating high-end beans.",
+      "sources": [
+        "Visit Stockholm",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 6,
+      "id": "muttley-jacks",
+      "name": "Muttley & Jack's Coffee Roasters",
+      "address": "Barnängsgatan 13, 116 49 Stockholm",
+      "distanceKm": 2.1,
+      "externalRating": 5,
+      "externalReviews": 7,
+      "kind": "Coffee roastery · café",
+      "why": "A small roastery café with exceptional public feedback and a focused craft-coffee identity.",
+      "sources": [
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 7,
+      "id": "solkant",
+      "name": "Solkant Café & Roastery",
+      "address": "Pipersgatan 24, 112 28 Stockholm",
+      "distanceKm": 1.5,
+      "externalRating": 4.9,
+      "externalReviews": 52,
+      "kind": "Coffee roastery · café",
+      "why": "A highly rated Kungsholmen roastery with a neighbourhood feel and strong coffee credentials.",
+      "sources": [
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 8,
+      "id": "steam-coffee",
+      "name": "Steam Coffee",
+      "address": "Nybrogatan 20, 114 39 Stockholm",
+      "distanceKm": 1.3,
+      "externalRating": 4.9,
+      "externalReviews": 13,
+      "kind": "Specialty coffee · micro-roastery",
+      "why": "A compact Östermalm coffee bar roasting in-house and pairing specialty coffee with house-baked croissants.",
+      "sources": [
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 9,
+      "id": "johan-nystrom",
+      "name": "Johan & Nyström",
+      "address": "Hantverkargatan 7, 112 21 Stockholm",
+      "distanceKm": 1.7,
+      "externalRating": 4.5,
+      "externalReviews": 2,
+      "kind": "Specialty coffee · roaster",
+      "why": "A major name in Swedish specialty coffee and a useful benchmark for how Stockholm approaches modern coffee.",
+      "sources": [
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 10,
+      "id": "kersh",
+      "name": "Kersh Kaffebar",
+      "address": "Götgatan 29, 116 21 Stockholm",
+      "distanceKm": 0.9,
+      "externalRating": null,
+      "externalReviews": null,
+      "kind": "Specialty coffee · coffee bar",
+      "why": "A tiny Södermalm coffee bar singled out by Swedish coffee champion Lakis Psomas for bean selection and careful brewing.",
+      "sources": [
+        "Visit Stockholm"
+      ]
+    },
+    {
+      "rank": 11,
+      "id": "socker-sucker",
+      "name": "Socker Sucker",
+      "address": "Drottninggatan 93, 113 60 Stockholm",
+      "distanceKm": 1.3,
+      "externalRating": 4.7,
+      "externalReviews": 31,
+      "kind": "Pâtisserie · café",
+      "why": "A polished pastry destination with strong ratings and high-level pastry craftsmanship in the city centre.",
+      "sources": [
+        "Thatsup",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 12,
+      "id": "bergstrands",
+      "name": "Bergstrands Bageri",
+      "address": "Frejgatan 46A, 113 26 Stockholm",
+      "distanceKm": 2.6,
+      "externalRating": 4.8,
+      "externalReviews": 508,
+      "kind": "Artisan bakery · café",
+      "why": "A highly rated neighbourhood bakery with serious bread and fika appeal.",
+      "sources": [
+        "Thatsup",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 13,
+      "id": "valhallabageriet",
+      "name": "Valhallabageriet",
+      "address": "Odengatan 19, 114 24 Stockholm",
+      "distanceKm": 2.3,
+      "externalRating": 4.5,
+      "externalReviews": 2,
+      "kind": "Sourdough bakery · café",
+      "why": "A long-running artisan bakery known for sourdough, buns and a strong Stockholm following.",
+      "sources": [
+        "Thatsup",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 14,
+      "id": "stora-bageriet",
+      "name": "Stora Bageriet",
+      "address": "Sibyllegatan 2, 114 51 Stockholm",
+      "distanceKm": 1.6,
+      "externalRating": 3.8,
+      "externalReviews": 53,
+      "kind": "Bakery · café",
+      "why": "A destination bakery in a historic setting near the waterfront, balancing atmosphere with ambitious baking.",
+      "sources": [
+        "Thatsup",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 15,
+      "id": "skeppsbro-bageri",
+      "name": "Skeppsbro Bageri",
+      "address": "Skeppsbron 21, 111 30 Stockholm",
+      "distanceKm": 0.4,
+      "externalRating": null,
+      "externalReviews": null,
+      "kind": "Organic bakery · café",
+      "why": "A waterfront bakery in Gamla Stan highlighted in current Stockholm bakery guides for organic baking and setting.",
+      "sources": [
+        "Thatsup"
+      ]
+    },
+    {
+      "rank": 16,
+      "id": "eken",
+      "name": "Eken Bageri & Kökscafé",
+      "address": "Sturegatan 19, 114 36 Stockholm",
+      "distanceKm": 2,
+      "externalRating": 4,
+      "externalReviews": 9,
+      "kind": "Bakery · kitchen café",
+      "why": "A chef-led bakery café opened in 2026, quickly becoming notable for classic Swedish baking with a culinary edge.",
+      "sources": [
+        "Thatsup",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 17,
+      "id": "fosch",
+      "name": "Fosch Artisan Pâtisserie",
+      "address": "Birger Jarlsgatan 63, 113 56 Stockholm",
+      "distanceKm": 2.1,
+      "externalRating": 3.8,
+      "externalReviews": 9,
+      "kind": "Artisan pâtisserie · café",
+      "why": "A visually refined patisserie consistently included among Stockholm’s best konditori.",
+      "sources": [
+        "Thatsup",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 18,
+      "id": "komet",
+      "name": "Komet Café",
+      "address": "Kungsholmsgatan 10, 112 27 Stockholm",
+      "distanceKm": 1.4,
+      "externalRating": null,
+      "externalReviews": null,
+      "kind": "Bakery · coffee shop",
+      "why": "A newer bakery-café format on Kungsholmen with pastry, coffee and a modern neighbourhood feel.",
+      "sources": [
+        "Public business listings"
+      ]
+    },
+    {
+      "rank": 19,
+      "id": "volca",
+      "name": "Volca Coffee Roaster",
+      "address": "Hantverkargatan 8, 112 21 Stockholm",
+      "distanceKm": 1.7,
+      "externalRating": 4.3,
+      "externalReviews": 4,
+      "kind": "Coffee roastery · café",
+      "why": "A small roaster that adds another independent specialty-coffee voice to Kungsholmen.",
+      "sources": [
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 20,
+      "id": "gast",
+      "name": "Gast Café",
+      "address": "Rådmansgatan 57, 113 60 Stockholm",
+      "distanceKm": 1.9,
+      "externalRating": 4.1,
+      "externalReviews": 59,
+      "kind": "Coffee · brunch",
+      "why": "A modern central café praised by Lakis Psomas for its varied brewed-coffee menu and relaxed atmosphere.",
+      "sources": [
+        "Visit Stockholm",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 21,
+      "id": "ritorno",
+      "name": "Ritorno",
+      "address": "Odengatan 80, 113 22 Stockholm",
+      "distanceKm": 2.4,
+      "externalRating": 4.1,
+      "externalReviews": 1263,
+      "kind": "Classic konditori · café",
+      "why": "A Stockholm fika institution dating back decades, combining classic konditori atmosphere with a huge local following.",
+      "sources": [
+        "Visit Stockholm",
+        "Thatsup",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 22,
+      "id": "gunnarsons",
+      "name": "Gunnarsons Specialkonditori",
+      "address": "Götgatan 92, 118 62 Stockholm",
+      "distanceKm": 1.6,
+      "externalRating": 4.1,
+      "externalReviews": 1606,
+      "kind": "Classic konditori · pastry",
+      "why": "One of Södermalm’s classic pastry institutions with very high review volume and traditional Swedish fika appeal.",
+      "sources": [
+        "Thatsup",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 23,
+      "id": "pascal-norrtull",
+      "name": "Café Pascal · Norrtullsgatan",
+      "address": "Norrtullsgatan 4, 113 29 Stockholm",
+      "distanceKm": 2.2,
+      "externalRating": 4.3,
+      "externalReviews": 193,
+      "kind": "Specialty coffee · café",
+      "why": "A celebrated Vasastan café and one of Stockholm’s best-known modern coffee addresses.",
+      "sources": [
+        "Visit Stockholm",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 24,
+      "id": "rosendals",
+      "name": "Rosendals Trädgårdskafé",
+      "address": "Rosendalsterrassen 12, 115 21 Stockholm",
+      "distanceKm": 2.7,
+      "externalRating": 4.1,
+      "externalReviews": 487,
+      "kind": "Garden café · bakery",
+      "why": "A destination fika in Djurgården with garden setting, organic ethos and one of Stockholm’s strongest atmosphere scores.",
+      "sources": [
+        "Visit Stockholm",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 25,
+      "id": "tossebageriet",
+      "name": "Tössebageriet",
+      "address": "Karlavägen 77, 114 49 Stockholm",
+      "distanceKm": 1.8,
+      "externalRating": 4,
+      "externalReviews": 88,
+      "kind": "Historic bakery · konditori",
+      "why": "A long-established Östermalm bakery with classic Swedish pastry credentials and seasonal cult favourites.",
+      "sources": [
+        "Thatsup",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 26,
+      "id": "sosta",
+      "name": "Sosta Espresso Bar",
+      "address": "Sveavägen 86, 113 59 Stockholm",
+      "distanceKm": 1.9,
+      "externalRating": 4.6,
+      "externalReviews": 50,
+      "kind": "Italian espresso bar",
+      "why": "A compact Italian-style espresso bar with strong ratings and a distinct counter-coffee experience.",
+      "sources": [
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 27,
+      "id": "mellqvist",
+      "name": "Kaffebar · Bysistorget",
+      "address": "Bysistorget 6, 118 21 Stockholm",
+      "distanceKm": 1,
+      "externalRating": null,
+      "externalReviews": null,
+      "kind": "Neighbourhood coffee bar",
+      "why": "A Södermalm neighbourhood coffee stop in the tradition of Stockholm’s classic no-fuss kaffebarer.",
+      "sources": [
+        "Public business listings"
+      ]
+    },
+    {
+      "rank": 28,
+      "id": "pom-flora",
+      "name": "Pom & Flora · Rörstrandsgatan",
+      "address": "Rörstrandsgatan 34, 113 40 Stockholm",
+      "distanceKm": 2.9,
+      "externalRating": 4,
+      "externalReviews": 80,
+      "kind": "Brunch · coffee",
+      "why": "A trend-setting Stockholm brunch café with strong coffee, photogenic plates and a loyal following.",
+      "sources": [
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 29,
+      "id": "cafe-koya",
+      "name": "Café Koya",
+      "address": "Gästrikegatan 3, 113 62 Stockholm",
+      "distanceKm": 2.6,
+      "externalRating": 4.4,
+      "externalReviews": 715,
+      "kind": "Japanese-inspired café · matcha",
+      "why": "A distinctive Japanese-inspired fika stop pairing light-roast coffee, matcha and less-sweet pastries.",
+      "sources": [
+        "Visit Stockholm",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 30,
+      "id": "vurma",
+      "name": "Vurma · Hornstull",
+      "address": "Bergsunds strand 31, 117 38 Stockholm",
+      "distanceKm": 2.5,
+      "externalRating": 4.2,
+      "externalReviews": 861,
+      "kind": "Neighbourhood café · brunch",
+      "why": "A relaxed Hornstull institution with broad fika, breakfast and brunch appeal.",
+      "sources": [
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 31,
+      "id": "alskade-traditioner",
+      "name": "Älskade Traditioner",
+      "address": "Södermannagatan 42, 116 40 Stockholm",
+      "distanceKm": 1.6,
+      "externalRating": null,
+      "externalReviews": null,
+      "kind": "Retro Swedish café",
+      "why": "A playful retro café built around Swedish comfort-food nostalgia, waffles and colourful fika.",
+      "sources": [
+        "Public business listings"
+      ]
+    },
+    {
+      "rank": 32,
+      "id": "robin-delselius",
+      "name": "Robin Delselius Bageri",
+      "address": "Renstiernas gata 19, 116 31 Stockholm",
+      "distanceKm": 1.3,
+      "externalRating": 4.3,
+      "externalReviews": 46,
+      "kind": "Bakery · café",
+      "why": "A popular Södermalm bakery-café with modern Swedish baking and reliable fika credentials.",
+      "sources": [
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 33,
+      "id": "saturnus",
+      "name": "Café Saturnus",
+      "address": "Eriksbergsgatan 6, 114 30 Stockholm",
+      "distanceKm": 1.7,
+      "externalRating": 4,
+      "externalReviews": 388,
+      "kind": "French-Swedish café · pastry",
+      "why": "A Stockholm classic famous for oversized cinnamon buns and a lively continental café atmosphere.",
+      "sources": [
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 34,
+      "id": "schweizer",
+      "name": "Café Schweizer",
+      "address": "Västerlånggatan 9, 111 29 Stockholm",
+      "distanceKm": 0.2,
+      "externalRating": 4.4,
+      "externalReviews": 889,
+      "kind": "Classic café · Gamla Stan",
+      "why": "A high-volume Gamla Stan favourite with strong ratings and a classic central Stockholm café experience.",
+      "sources": [
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 35,
+      "id": "under-kastanjen",
+      "name": "Under Kastanjen",
+      "address": "Kindstugatan 1, 111 31 Stockholm",
+      "distanceKm": 0.2,
+      "externalRating": 4.1,
+      "externalReviews": 907,
+      "kind": "Courtyard café · Gamla Stan",
+      "why": "A charming courtyard café in Gamla Stan with strong atmosphere and broad fika appeal.",
+      "sources": [
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 36,
+      "id": "chokladkoppen",
+      "name": "Chokladkoppen",
+      "address": "Stortorget 18, 111 29 Stockholm",
+      "distanceKm": 0.1,
+      "externalRating": 4.1,
+      "externalReviews": 974,
+      "kind": "Classic café · chocolate",
+      "why": "A cosy Stortorget institution with huge review volume and a quintessential Gamla Stan setting.",
+      "sources": [
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 37,
+      "id": "petissan",
+      "name": "Kafé Petissan",
+      "address": "Djurgårdsslätten 49, 115 21 Stockholm",
+      "distanceKm": 2.2,
+      "externalRating": 4.5,
+      "externalReviews": 392,
+      "kind": "Historic fika · Skansen",
+      "why": "A deliberately old-fashioned fika experience serving traditional cakes in a tiny historic Skansen setting.",
+      "sources": [
+        "Skansen",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 38,
+      "id": "bla-porten",
+      "name": "Blå Porten",
+      "address": "Djurgårdsvägen 64, 115 21 Stockholm",
+      "distanceKm": 1.6,
+      "externalRating": 3.8,
+      "externalReviews": 63,
+      "kind": "Garden café · Djurgården",
+      "why": "A classic Djurgården stop with a courtyard-garden feel and a long place in Stockholm café culture.",
+      "sources": [
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 39,
+      "id": "flickorna-helin",
+      "name": "Flickorna Helin",
+      "address": "Rosendalsvägen 14, 115 21 Stockholm",
+      "distanceKm": 2,
+      "externalRating": null,
+      "externalReviews": null,
+      "kind": "Villa café · Djurgården",
+      "why": "A destination café in a historic villa, chosen as much for atmosphere and setting as for fika.",
+      "sources": [
+        "Public business listings"
+      ]
+    },
+    {
+      "rank": 40,
+      "id": "systrarna-andersson",
+      "name": "Systrarna Andersson",
+      "address": "Karlbergsvägen 45, 113 37 Stockholm",
+      "distanceKm": 2.7,
+      "externalRating": 4.3,
+      "externalReviews": 860,
+      "kind": "Neighbourhood café · bakery",
+      "why": "A busy Vasastan neighbourhood favourite with strong ratings, broad fika selection and all-day café appeal.",
+      "sources": [
+        "Thatsup",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 41,
+      "id": "cafe-foam",
+      "name": "Café Foam",
+      "address": "Karlavägen 75, 114 49 Stockholm",
+      "distanceKm": 1.8,
+      "externalRating": 4,
+      "externalReviews": 67,
+      "kind": "Design café · coffee",
+      "why": "A design-conscious Östermalm café with a long-standing reputation for stylish fika and coffee.",
+      "sources": [
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 42,
+      "id": "il-caffe",
+      "name": "Il Caffè · Drottninggatan",
+      "address": "Drottninggatan 85, 111 60 Stockholm",
+      "distanceKm": 1.7,
+      "externalRating": 4.1,
+      "externalReviews": 51,
+      "kind": "Coffee bar · café",
+      "why": "A central Stockholm coffee-bar staple with a straightforward espresso-and-fika identity.",
+      "sources": [
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 43,
+      "id": "studio-canteen",
+      "name": "Studio Canteen",
+      "address": "Sveavägen 9, 111 57 Stockholm",
+      "distanceKm": 1.1,
+      "externalRating": 4.3,
+      "externalReviews": 15,
+      "kind": "Design café · breakfast",
+      "why": "A contemporary food-and-coffee space with a strong design identity and central location.",
+      "sources": [
+        "Thatsup",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 44,
+      "id": "gretas",
+      "name": "Gretas",
+      "address": "Hötorget 13–15, 111 57 Stockholm",
+      "distanceKm": 1.2,
+      "externalRating": 4,
+      "externalReviews": 581,
+      "kind": "Art deco café · brunch",
+      "why": "A visually distinctive 1920s-inspired café at Hötorget, notable for atmosphere and photogenic fika.",
+      "sources": [
+        "Thatsup",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 45,
+      "id": "le-violon-dingue",
+      "name": "Le Violon Dingue",
+      "address": "Olof Palmes gata 12, 111 37 Stockholm",
+      "distanceKm": 1.4,
+      "externalRating": 4.6,
+      "externalReviews": 20,
+      "kind": "Stone-oven bakery · café",
+      "why": "A compact central bakery café with strong ratings and a rustic European feel.",
+      "sources": [
+        "Thatsup",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 46,
+      "id": "cafe-volta",
+      "name": "Café Vólta",
+      "address": "Regeringsgatan 45, 111 56 Stockholm",
+      "distanceKm": 1,
+      "externalRating": 4,
+      "externalReviews": 1,
+      "kind": "Family-run café",
+      "why": "A small family-run city café that adds an independent, less obvious stop to the shortlist.",
+      "sources": [
+        "Thatsup",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 47,
+      "id": "mr-cake",
+      "name": "MR Cake · Regeringsgatan",
+      "address": "Regeringsgatan 57, 111 56 Stockholm",
+      "distanceKm": 1.1,
+      "externalRating": 3.1,
+      "externalReviews": 11,
+      "kind": "Pastry · café",
+      "why": "A high-profile pastry café known for bold, American-influenced baking and strong visual identity.",
+      "sources": [
+        "Thatsup",
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 48,
+      "id": "cafe-blom",
+      "name": "Café Blom",
+      "address": "Exercisplan 4, 111 49 Stockholm",
+      "distanceKm": 0.9,
+      "externalRating": 3.9,
+      "externalReviews": 84,
+      "kind": "Museum café · Skeppsholmen",
+      "why": "A calm museum café on Skeppsholmen with design surroundings and an easy destination-fika feel.",
+      "sources": [
+        "Public ratings"
+      ]
+    },
+    {
+      "rank": 49,
+      "id": "fern-fika",
+      "name": "Fern & Fika",
+      "address": "Långholmsgatan 11, 117 33 Stockholm",
+      "distanceKm": 2.2,
+      "externalRating": null,
+      "externalReviews": null,
+      "kind": "Plant-based café · coffee",
+      "why": "A plant-based Hornstull café that broadens the shortlist with vegan and gluten-free fika options.",
+      "sources": [
+        "Public business listings"
+      ]
+    },
+    {
+      "rank": 50,
+      "id": "stockholm-roast",
+      "name": "Stockholm Roast",
+      "address": "Hallvägen 9, 121 62 Stockholm",
+      "distanceKm": 3.8,
+      "externalRating": 5,
+      "externalReviews": 3,
+      "kind": "Coffee roastery",
+      "why": "An independent Stockholm roaster on the southern edge of the radius, worth including for coffee depth rather than centrality.",
+      "sources": [
+        "Public ratings"
+      ]
+    }
+  ]
+}
