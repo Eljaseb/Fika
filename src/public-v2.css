@@ -1376,3 +1376,7 @@ button,a{-webkit-tap-highlight-color:transparent}
     border-radius:18px;
   }
 }
+
+/* Shared cappuccino-heart brand mark. */
+.wtf-mark,.editorial-note .wtf-mark{background:#f8f4eb;box-shadow:none;overflow:hidden;flex-shrink:0}
+.wtf-mark img{display:block;width:100%;height:100%;object-fit:contain}
