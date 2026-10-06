@@ -11,7 +11,7 @@ function score(cafe){const d=avg(Object.values(cafe?.drink?.ratings||{}));const 
 function score10(cafe){const s=score(cafe);return s?(s/10).toFixed(1):"–"}
 function category10(category){const s=avg(Object.values(category?.ratings||{}));return s?(s*2).toFixed(1):"–"}
 function normalize(v=""){return v.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}
-function mark(){return <div className="cv2-mark" style={{background:"#f8f4eb",overflow:"hidden"}}><img src="/icons/fika-icon-192-v3.png" alt="Worth the Fika" style={{display:"block",width:"100%",height:"100%",objectFit:"contain"}} /></div>}
+function mark(){return <div className="cv2-mark" style={{background:"#f8f4eb",overflow:"hidden"}}><img src="/icons/fika-icon-v4.svg" alt="Worth the Fika" style={{display:"block",width:"100%",height:"100%",objectFit:"contain"}} /></div>}
 function initials(name){return String(name||"Fika").split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join("").toUpperCase()}
 function blankRatings(list){return Object.fromEntries(list.map(x=>[x,0]))}
 
