@@ -153,7 +153,7 @@ function CafeMap({items,allMode=false,onOpen}) {
       })}
     </MapContainer>
     <div className="map-legend">
-      <span><i className="legend-dot rated"/>Rated {items.filter(x=>x.review).length}</span>
+      <span><i className="legend-dot rated"/>Fika-rated {items.filter(x=>x.review).length}</span>
       {allMode && <span><i className="legend-dot todo"/>To taste {items.filter(x=>!x.review).length}</span>}
     </div>
     {points.length < items.length && <div className="map-progress">Locating cafés · {points.length}/{items.length}</div>}
@@ -184,7 +184,7 @@ function CatalogCard({cafe,review,saved,onSave,onOpen}) {
       <div className="tag-line">
         <span>{firstTag(cafe,review)}</span>
         {review?.scene && <span>{review.scene}</span>}
-        {rated && <span className="rated-tag">✓ Rated</span>}
+        {rated && <span className="rated-tag">✓ Fika-rated</span>}
       </div>
       {!rated && <p className="public-signal">{publicRatingText(cafe)} · {cafe.distanceKm != null ? `≈ ${cafe.distanceKm} km from centre` : "Copenhagen"}</p>}
     </div>
@@ -296,7 +296,7 @@ export default function PublicAppV2() {
       <button className="wtf-brand" onClick={()=>setView("all")}><Mark/><span>Worth the Fika</span></button>
       <nav>
         <button className={view==="all"?"active":""} onClick={()=>setView("all")}>Top 50</button>
-        <button className={view==="rated"?"active":""} onClick={()=>setView("rated")}>Reviewed <i>{rated.length}</i></button>
+        <button className={view==="rated"?"active":""} onClick={()=>setView("rated")}>Fika-rated <i>{rated.length}</i></button>
         <button className={view==="saved"?"active":""} onClick={()=>setView("saved")}>Saved <i>{saved.length}</i></button>
         <a className="admin-link" href="/?admin=1">Admin / Review</a>
       </nav>
@@ -306,21 +306,16 @@ export default function PublicAppV2() {
       <section className="app-intro">
         <div>
           <p className="eyebrow">COPENHAGEN · WITHIN ~5 KM OF THE CENTRE</p>
-          <h1>{view==="rated" ? "Reviewed cafés" : view==="saved" ? "Saved for your next fika" : "Copenhagen Top 50"}</h1>
-          <p>{view==="rated" ? "Real cafés. Honest reviews. Better fika moments." : view==="saved" ? "Your personal shortlist." : "Research finds the places. Real tasting decides what is truly worth the fika."}</p>
-        </div>
-        <div className="intro-counts">
-          <div><strong>50</strong><span>Top 50</span></div>
-          <div><strong>{ratedFrom50.length}</strong><span>Reviewed</span></div>
-          <div><strong>{Math.max(0,50-ratedFrom50.length)}</strong><span>To go</span></div>
+          <h1>{view==="rated" ? "Fika-rated cafés" : view==="saved" ? "Saved for your next fika" : "Copenhagen Top 50"}</h1>
+          <p>{view==="rated" ? "Personally tasted and rated in Worth the Fika." : view==="saved" ? "Your personal shortlist." : "Research finds the places. Real tasting decides what is truly worth the fika."}</p>
         </div>
       </section>
 
       <section className="filter-row">
         <div className="segmented">
-          <button className={view==="all"?"active":""} onClick={()=>setView("all")}>Top 50</button>
-          <button className={view==="rated"?"active":""} onClick={()=>setView("rated")}>Reviewed</button>
-          <button className={view==="saved"?"active":""} onClick={()=>setView("saved")}>Saved</button>
+          <button className={view==="all"?"active":""} onClick={()=>setView("all")}><span>Top 50</span><b>50</b></button>
+          <button className={view==="rated"?"active":""} onClick={()=>setView("rated")}><span>Fika-rated</span><b>{rated.length}</b></button>
+          <button className={view==="saved"?"active":""} onClick={()=>setView("saved")}><span>Saved</span><b>{saved.length}</b></button>
         </div>
         <label className="search-field"><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search café, neighbourhood, vibe…"/></label>
       </section>
@@ -329,14 +324,14 @@ export default function PublicAppV2() {
         <div className="map-copy">
           <p className="eyebrow">{view==="all"?"THE 50 ON A MAP":"YOUR TASTING MAP"}</p>
           <h2>{view==="all"?"Plan your next café stop.":"Where you have already been."}</h2>
-          <p>{view==="all"?"Green pins are cafés already reviewed by Worth the Fika. Cream pins are still waiting for a real tasting.":"Only your published reviews appear here."}</p>
+          <p>{view==="all"?"Green pins are Fika-rated by Worth the Fika. Cream pins are still waiting for a real tasting.":"Only cafés personally rated in Worth the Fika appear here."}</p>
         </div>
         <CafeMap items={view==="all"?enriched:rated} allMode={view==="all"} onOpen={setSelected}/>
       </section>}
 
       <section className="list-section">
         <div className="list-heading">
-          <div><p className="eyebrow">{view==="rated"?"YOUR REVIEWS":view==="saved"?"SAVED PLACES":"THE SHORTLIST"}</p><h2>{loading?"Loading…":`${visible.length} cafés`}</h2></div>
+          <div><p className="eyebrow">{view==="rated"?"FIKA-RATED":view==="saved"?"SAVED PLACES":"THE SHORTLIST"}</p><h2>{loading?"Loading…":`${visible.length} cafés`}</h2></div>
           <p>{view==="all"?"A curated shortlist built from guide recognition, current public reputation and distinctiveness.":"Tap a café to open its full review card."}</p>
         </div>
         <div className="cafe-cards">
@@ -352,7 +347,7 @@ export default function PublicAppV2() {
 
     <nav className="mobile-nav">
       <button className={view==="all"?"active":""} onClick={()=>setView("all")}><span>⌂</span>Top 50</button>
-      <button className={view==="rated"?"active":""} onClick={()=>setView("rated")}><span>☕</span>Reviewed</button>
+      <button className={view==="rated"?"active":""} onClick={()=>setView("rated")}><span>☕</span>Fika-rated</button>
       <button className={view==="saved"?"active":""} onClick={()=>setView("saved")}><span>♡</span>Saved</button>
       <a href="/?admin=1"><span>•••</span>Admin</a>
     </nav>
