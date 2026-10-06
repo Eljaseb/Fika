@@ -5,5 +5,19 @@
   "display": "standalone",
   "background_color": "#f5efe6",
   "theme_color": "#f5efe6",
-  "description": "A curated guide to coffee, pastry and café moments worth crossing the city for."
+  "description": "A curated guide to coffee, pastry and café moments worth crossing the city for.",
+  "icons": [
+    {
+      "src": "/icons/fika-icon-192-v1.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/fika-icon-512-v1.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
 }
