@@ -854,5 +854,9 @@
       "image": "https://image-worker.mindtrip.ai/image-resize/format%3Dwebp%2Cw%3D1200/https%3A/tcdn.mindtrip.ai/images/242317/1nihrev.png",
       "imageSource": "https://extract.coffee/cafe/originalcoffee-bredgade-copenhagen"
     }
-  ]
+  ],
+  "city": "Copenhagen",
+  "country": "Denmark",
+  "centerLat": 55.6761,
+  "centerLng": 12.5683
 }
