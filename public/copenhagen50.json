@@ -197,8 +197,8 @@
         "Visit Copenhagen",
         "Public ratings"
       ],
-      "image": "https://tcdn.mindtrip.ai/images/240736/1d0hq6s.png",
-      "imageSource": "https://mindtrip.ai/restaurant/copenhagen-denmark/lido/re-AHr3oG7X"
+      "image": "https://files.guidedanmark.org/files/382/169837_Next_Door_Caf_Martin_Heiberg.jpg",
+      "imageSource": "https://www.visitcopenhagen.com/copenhagen/planning/next-door-cafe-gdk809641"
     },
     {
       "rank": 12,
@@ -479,7 +479,7 @@
       "rank": 28,
       "id": "alice",
       "name": "Alice",
-      "address": "Markmandsgade 1 / Amagerbrogade 5, 2300 København S",
+      "address": "Markmandsgade 1, 2300 København S",
       "distanceKm": 1.9,
       "externalRating": null,
       "externalReviews": null,
@@ -671,8 +671,8 @@
       "sources": [
         "European Coffee Trip"
       ],
-      "image": "https://coffeecollective.dk/cdn/shop/articles/1602674485-torvehallerne-coffee-collective.jpg?v=1739310747&width=1920",
-      "imageSource": "https://coffeecollective.dk/blogs/stories/10-years-at-torvehallerne"
+      "image": "https://tcdn.mindtrip.ai/images/176625/10p7lzb.png",
+      "imageSource": "https://mindtrip.ai/restaurant/copenhagen-denmark/coffee-collective-jaegersborggade/re-WpzHyPV2"
     },
     {
       "rank": 40,
@@ -687,8 +687,8 @@
       "sources": [
         "European Coffee Trip"
       ],
-      "image": "https://coffeecollective.dk/cdn/shop/articles/1602674485-torvehallerne-coffee-collective.jpg?v=1739310747&width=1920",
-      "imageSource": "https://coffeecollective.dk/blogs/stories/10-years-at-torvehallerne"
+      "image": "https://cdn.corner.inc/place-photo/9ff83031-3e49-4f75-9491-b9a9747e8d29.jpeg",
+      "imageSource": "https://www.corner.inc/place/1467"
     },
     {
       "rank": 41,
@@ -703,8 +703,8 @@
       "sources": [
         "European Coffee Trip"
       ],
-      "image": "https://coffeecollective.dk/cdn/shop/articles/1602674485-torvehallerne-coffee-collective.jpg?v=1739310747&width=1920",
-      "imageSource": "https://coffeecollective.dk/blogs/stories/10-years-at-torvehallerne"
+      "image": "https://vilhelmlauritzen.com/media/cfshjbui/10-pasteurs-taarn-vilhem-lauritzen-arkitekter-julie-skjoet-kongsbak.jpg?height=900&quality=90",
+      "imageSource": "https://vilhelmlauritzen.com/da/projekt-samling/pasteurs-taarn/"
     },
     {
       "rank": 42,
