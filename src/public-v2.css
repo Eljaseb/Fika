@@ -718,3 +718,184 @@ button,a{-webkit-tap-highlight-color:transparent}
   .detail-social>span{font-size:14px}
   .editorial-note-side{width:100%}
 }
+
+
+/* v2.5.1 cleaner hero, contact, mobile map */
+.hero-chips{display:none!important}
+
+.hero-rank{
+  min-width:48px;
+  height:48px;
+  padding:0 11px;
+  font-size:13px;
+  font-weight:900;
+  letter-spacing:.01em;
+  background:#fffaf2;
+  color:#2e241e;
+  border:2px solid rgba(70,54,43,.12);
+  box-shadow:0 5px 16px rgba(35,26,20,.14);
+}
+.rank-chip{
+  padding:7px 10px;
+  font-size:11px;
+  font-weight:900;
+  background:#eadcc8;
+  color:#4e4036;
+  border:1px solid rgba(117,91,67,.14);
+}
+
+.contact-button{
+  border:1px solid rgba(176,150,128,.36);
+  background:#fffaf2;
+  color:#5f5046;
+  border-radius:999px;
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:8px 11px;
+  font-size:11px;
+  font-weight:800;
+  cursor:pointer;
+}
+.contact-button svg{width:17px;height:17px}
+.wtf-header nav .contact-button{padding:9px 11px}
+
+.contact-backdrop{
+  position:fixed;
+  inset:0;
+  z-index:6000;
+  background:rgba(35,27,22,.58);
+  backdrop-filter:blur(8px);
+  display:grid;
+  place-items:center;
+  padding:18px;
+}
+.contact-modal{
+  width:min(540px,100%);
+  background:#fffaf2;
+  border-radius:28px;
+  padding:30px;
+  box-shadow:0 30px 90px rgba(27,20,16,.28);
+  position:relative;
+}
+.contact-close{
+  position:absolute;
+  right:14px;
+  top:14px;
+  width:38px;
+  height:38px;
+  border:0;
+  border-radius:50%;
+  background:#eee3d6;
+  color:#3e3129;
+  font-size:24px;
+  cursor:pointer;
+}
+.contact-modal h2{
+  font:600 42px/1 Georgia,serif;
+  letter-spacing:-.035em;
+  margin:0 0 12px;
+}
+.contact-intro{
+  margin:0 0 22px;
+  color:#776b62;
+  font-size:13px;
+  line-height:1.55;
+  max-width:440px;
+}
+.contact-modal form{display:grid;gap:14px}
+.contact-modal label{
+  display:grid;
+  gap:6px;
+  font-size:10px;
+  font-weight:850;
+  color:#695c53;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+.contact-modal input,.contact-modal textarea{
+  width:100%;
+  border:1px solid #d9ccbd;
+  border-radius:15px;
+  background:#fffdf8;
+  color:#2a211c;
+  padding:12px 13px;
+  outline:0;
+  font:500 14px/1.4 Inter,ui-sans-serif,sans-serif;
+  text-transform:none;
+  letter-spacing:0;
+}
+.contact-modal textarea{resize:vertical;min-height:130px}
+.contact-modal input:focus,.contact-modal textarea:focus{
+  border-color:#7a8a70;
+  box-shadow:0 0 0 3px rgba(95,113,85,.12);
+}
+.send-message{
+  border:0;
+  border-radius:999px;
+  background:#5d7153;
+  color:white;
+  min-height:46px;
+  padding:0 18px;
+  font-weight:850;
+  cursor:pointer;
+}
+.send-message:disabled{opacity:.65;cursor:wait}
+.contact-status{margin:0;text-align:center;color:#8c5a47;font-size:11px;font-weight:700}
+.contact-status.success{color:#55704c}
+
+.map-section,.map-shell{min-width:0}
+.map-shell{width:100%}
+
+@media(max-width:960px){
+  .map-section{
+    grid-template-columns:1fr!important;
+    width:100%;
+  }
+  .map-shell{
+    width:100%;
+    max-width:none;
+  }
+}
+
+@media(max-width:700px){
+  .mobile-header-actions .contact-button{
+    width:38px;
+    height:38px;
+    padding:0;
+    justify-content:center;
+  }
+  .mobile-header-actions .contact-button span{display:none}
+  .mobile-header-actions .contact-button svg{width:19px;height:19px}
+  .hero-rank{
+    min-width:42px;
+    height:42px;
+    font-size:12px;
+    top:9px;
+    left:9px;
+  }
+  .map-section{
+    display:block!important;
+    padding-left:7px;
+    padding-right:7px;
+  }
+  .map-copy{
+    width:100%;
+    margin-bottom:18px;
+  }
+  .map-shell{
+    width:100%!important;
+    height:390px;
+    border-radius:22px;
+  }
+  .contact-modal{
+    padding:26px 18px 20px;
+    border-radius:24px 24px 0 0;
+    width:100%;
+  }
+  .contact-backdrop{
+    padding:0;
+    place-items:end stretch;
+  }
+  .contact-modal h2{font-size:36px}
+}
