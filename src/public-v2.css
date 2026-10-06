@@ -178,3 +178,204 @@ button,a{-webkit-tap-highlight-color:transparent}
   .wtf-map-pin{width:32px;height:37px;border-width:2px}
   .wtf-map-pin span{font-size:11px}
 }
+
+
+/* v2.3.4 navigation simplification + mobile detail fixes */
+.app-intro{grid-template-columns:1fr;align-items:start;padding-bottom:24px}
+.intro-counts{display:none!important}
+
+.segmented{align-items:stretch}
+.segmented button{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  min-width:118px;
+  padding:10px 14px;
+}
+.segmented button span{font-weight:800}
+.segmented button b{
+  min-width:25px;
+  height:25px;
+  padding:0 7px;
+  border-radius:999px;
+  display:grid;
+  place-items:center;
+  background:rgba(83,70,59,.09);
+  color:#6f6258;
+  font-size:10px;
+  font-weight:850;
+}
+.segmented button.active b{
+  background:rgba(255,255,255,.18);
+  color:white;
+}
+
+.detail-backdrop{
+  z-index:5000;
+}
+.editorial-detail{
+  overflow-x:hidden;
+  isolation:isolate;
+}
+.detail-sheet,
+.detail-heading,
+.detail-badges,
+.taste-section,
+.detail-footer{
+  min-width:0;
+  max-width:100%;
+}
+.detail-badges{
+  align-items:flex-start;
+}
+.detail-badges span{
+  max-width:100%;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+.leaflet-pane,
+.leaflet-top,
+.leaflet-bottom{
+  z-index:10;
+}
+.leaflet-control{
+  z-index:20;
+}
+
+@media(max-width:700px){
+  .app-intro{padding:34px 7px 18px}
+  .app-intro h1{font-size:46px}
+  .filter-row{gap:12px}
+  .segmented{padding:4px;gap:2px}
+  .segmented button{
+    min-width:0;
+    padding:10px 5px;
+    gap:5px;
+    font-size:11px;
+  }
+  .segmented button b{
+    min-width:21px;
+    height:21px;
+    padding:0 5px;
+    font-size:9px;
+  }
+
+  .detail-backdrop{
+    padding:0;
+    align-items:end;
+    overflow:hidden;
+  }
+  .editorial-detail{
+    width:100%;
+    max-width:100%;
+    max-height:94dvh;
+    border-radius:24px 24px 0 0;
+    overflow-y:auto;
+    overflow-x:hidden;
+    overscroll-behavior:contain;
+  }
+  .detail-close{
+    position:fixed;
+    top:max(14px,env(safe-area-inset-top));
+    right:14px;
+    z-index:5002;
+    box-shadow:0 5px 18px rgba(38,28,22,.16);
+  }
+  .detail-hero{
+    height:300px;
+  }
+  .photo-chip{
+    max-width:calc(50% - 24px);
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    padding:7px 9px;
+    font-size:8px;
+  }
+  .photo-chip.left{left:12px}
+  .photo-chip.right{right:62px}
+
+  .hero-score{
+    width:82px;
+    height:82px;
+    right:14px;
+    bottom:0;
+    transform:translateY(38%);
+    border-width:4px;
+  }
+  .hero-score strong{font-size:31px}
+  .hero-score span{font-size:6px}
+
+  .detail-sheet{
+    padding:42px 16px calc(24px + env(safe-area-inset-bottom));
+    overflow:hidden;
+  }
+  .detail-kicker{
+    padding-right:78px;
+  }
+  .detail-heading h2{
+    font-size:36px;
+    line-height:1.02;
+    margin:0 0 14px;
+    padding-right:0;
+    overflow-wrap:anywhere;
+  }
+  .detail-heading h2 span{
+    font-size:.52em;
+    white-space:nowrap;
+  }
+  .detail-badges{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    width:100%;
+  }
+  .detail-badges span,.not-rated-pill{
+    font-size:9px;
+    padding:7px 9px;
+    max-width:100%;
+  }
+  .taste-section{margin-top:22px}
+  .taste-highlight{
+    grid-template-columns:36px minmax(0,1fr) auto;
+    gap:10px;
+  }
+  .taste-highlight strong{
+    font-size:17px;
+    overflow-wrap:anywhere;
+  }
+  .taste-highlight p{
+    font-size:10px;
+    overflow-wrap:anywhere;
+  }
+  .taste-highlight>b{font-size:22px}
+  .detail-verdict{
+    font-size:17px;
+    line-height:1.5;
+    overflow-wrap:anywhere;
+  }
+  .detail-footer{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .detail-footer-links{
+    width:100%;
+  }
+  .detail-footer-links a{
+    flex:1 1 auto;
+    text-align:center;
+  }
+  .detail-footer>span{
+    align-self:flex-end;
+    font-size:15px;
+  }
+
+  .mobile-nav{
+    z-index:70;
+  }
+  .detail-backdrop + .mobile-nav,
+  body:has(.detail-backdrop) .mobile-nav{
+    z-index:50;
+  }
+}
