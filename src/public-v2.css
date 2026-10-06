@@ -466,3 +466,52 @@ button,a{-webkit-tap-highlight-color:transparent}
     margin-bottom:28px;
   }
 }
+
+
+/* city selector */
+.city-switcher{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  padding:4px;
+  margin:0 0 22px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:rgba(255,250,242,.72);
+  box-shadow:0 8px 24px rgba(64,45,33,.04);
+}
+.city-switcher button{
+  border:0;
+  background:transparent;
+  color:#71655c;
+  border-radius:999px;
+  padding:9px 13px;
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  font-size:11px;
+  font-weight:800;
+  cursor:pointer;
+}
+.city-switcher button span{font-size:15px;line-height:1}
+.city-switcher button.active{
+  background:#332921;
+  color:#fff8ee;
+  box-shadow:0 5px 15px rgba(47,35,27,.14);
+}
+@media(max-width:700px){
+  .city-switcher{
+    margin-bottom:18px;
+    width:100%;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+  }
+  .city-switcher button{
+    justify-content:center;
+    padding:9px 8px;
+  }
+  .app-intro .eyebrow{
+    font-size:9px;
+    letter-spacing:.15em;
+  }
+}

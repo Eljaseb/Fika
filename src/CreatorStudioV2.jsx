@@ -21,8 +21,8 @@ function newCafe(catalogCafe){
     catalogId:catalogCafe?.id||"",
     name:catalogCafe?.name||"New café",
     address:catalogCafe?.address||"",
-    city:"Copenhagen",
-    country:"Denmark",
+    city:catalogCafe?.city||"Copenhagen",
+    country:catalogCafe?.country||"Denmark",
     visitedOn:new Date().toISOString().slice(0,10),
     scene:"",
     imgs:[],
@@ -202,18 +202,23 @@ export default function CreatorStudioV2(){
     let cancelled=false;
     (async()=>{
       try{
-        const [revRes,catRes]=await Promise.all([fetch(API),fetch("/copenhagen50.json")]);
+        const [revRes,cphRes,stoRes]=await Promise.all([fetch(API),fetch("/copenhagen50.json"),fetch("/stockholm50.json")]);
         const rev=revRes.ok?await revRes.json():[];
-        const cat=await catRes.json();
+        const cph=await cphRes.json();
+        const sto=await stoRes.json();
         if(cancelled)return;
-        setCatalog(cat?.cafes||[]);
+        const combined=[
+          ...(cph?.cafes||[]).map(item=>({...item,city:"Copenhagen",country:"Denmark"})),
+          ...(sto?.cafes||[]).map(item=>({...item,city:"Stockholm",country:"Sweden"}))
+        ];
+        setCatalog(combined);
         let next=Array.isArray(rev)?rev:[];
         const requested=new URLSearchParams(window.location.search).get("cafe");
         if(requested){
-          const item=(cat?.cafes||[]).find(c=>c.id===requested);
+          const item=combined.find(c=>c.id===requested);
           const existing=next.find(r=>r.catalogId===requested || normalize(r.name)===normalize(item?.name||"") || (item?.aliases||[]).some(a=>normalize(a)===normalize(r.name)));
           if(existing)setSelectedId(existing.id);
-          else if(item){const created=newCafe(item);next=[created,...next];setSelectedId(created.id);setStatus("New review started from Copenhagen 50")}
+          else if(item){const created=newCafe(item);next=[created,...next];setSelectedId(created.id);setStatus(`New review started from ${item.city} 50`)}
         }
         if(!selectedId&&!requested)setSelectedId(next?.[0]?.id||null);
         setCafes(next);
@@ -238,8 +243,8 @@ export default function CreatorStudioV2(){
 
   function linkCatalog(catalogId){
     const item=catalog.find(c=>c.id===catalogId);if(!item)return;
-    setCafes(list=>list.map(c=>c.id===selected.id?{...c,catalogId:item.id,name:item.name,address:item.address,city:"Copenhagen",country:"Denmark"}:c));
-    setStatus("Linked to Copenhagen 50");
+    setCafes(list=>list.map(c=>c.id===selected.id?{...c,catalogId:item.id,name:item.name,address:item.address,city:item.city||"Copenhagen",country:item.country||"Denmark"}:c));
+    setStatus(`Linked to ${item.city||"Copenhagen"} 50`);
   }
 
   async function publish(){
@@ -256,9 +261,9 @@ export default function CreatorStudioV2(){
     finally{setUploading(false)}
   }
 
-  if(!ready)return <main className="cv2-login"><form onSubmit={e=>{e.preventDefault();loginWith(code,true)}}>{mark()}<p className="cv2-eyebrow">Private creator studio</p><h1>Rate your next fika.</h1><p>Choose a café from the Copenhagen 50 or add your own, upload photos, score the tasting and create the Instagram post.</p><input type="password" value={code} onChange={e=>setCode(e.target.value)} placeholder="Admin code" autoFocus/>{status&&<small>{status}</small>}<button>Open Creator Studio</button><a href="/">Back to public guide</a></form></main>;
+  if(!ready)return <main className="cv2-login"><form onSubmit={e=>{e.preventDefault();loginWith(code,true)}}>{mark()}<p className="cv2-eyebrow">Private creator studio</p><h1>Rate your next fika.</h1><p>Choose a café from the Copenhagen or Stockholm Top 50, or add your own. Upload photos, score the tasting and create the Instagram post.</p><input type="password" value={code} onChange={e=>setCode(e.target.value)} placeholder="Admin code" autoFocus/>{status&&<small>{status}</small>}<button>Open Creator Studio</button><a href="/">Back to public guide</a></form></main>;
 
-  if(!selected)return <main className="cv2-empty">{mark()}<h1>No published reviews yet.</h1><p>Start with one of the researched Copenhagen cafés or add a custom place.</p><div className="cv2-empty-actions"><button onClick={()=>add()}>+ Custom café</button>{catalog.slice(0,6).map(item=><button key={item.id} className="secondary-empty" onClick={()=>add(item)}>#{item.rank} · {item.name}</button>)}</div></main>;
+  if(!selected)return <main className="cv2-empty">{mark()}<h1>No published reviews yet.</h1><p>Start with a researched Copenhagen or Stockholm café, or add a custom place.</p><div className="cv2-empty-actions"><button onClick={()=>add()}>+ Custom café</button>{catalog.slice(0,6).map(item=><button key={item.id} className="secondary-empty" onClick={()=>add(item)}>#{item.rank} · {item.name}</button>)}</div></main>;
 
   const photos=Array.isArray(selected.imgs)?selected.imgs:[];
   const cover=photos[0];
@@ -269,7 +274,8 @@ export default function CreatorStudioV2(){
     <div className="cv2-layout">
       <aside className="cv2-sidebar">
         <button className="new" onClick={()=>add()}>+ New custom café</button>
-        <details className="quick-add"><summary>+ From Copenhagen 50</summary><div>{catalog.filter(item=>!cafes.some(r=>r.catalogId===item.id)).slice(0,50).map(item=><button key={item.id} onClick={()=>add(item)}><b>#{item.rank} {item.name}</b><span>{item.address}</span></button>)}</div></details>
+        <details className="quick-add"><summary>+ From Copenhagen 50</summary><div>{catalog.filter(item=>item.city==="Copenhagen"&&!cafes.some(r=>r.catalogId===item.id)).slice(0,50).map(item=><button key={item.id} onClick={()=>add(item)}><b>#{item.rank} {item.name}</b><span>{item.address}</span></button>)}</div></details>
+        <details className="quick-add"><summary>+ From Stockholm 50</summary><div>{catalog.filter(item=>item.city==="Stockholm"&&!cafes.some(r=>r.catalogId===item.id)).slice(0,50).map(item=><button key={item.id} onClick={()=>add(item)}><b>#{item.rank} {item.name}</b><span>{item.address}</span></button>)}</div></details>
         <div className="review-list">{cafes.map(c=><button className={c.id===selected.id?"active":""} key={c.id} onClick={()=>{setSelectedId(c.id);setTab("review")}}><b>{c.name}</b><span>{c.city||"No city"} · {score(c)||"–"}/100</span></button>)}</div>
       </aside>
       <section className="cv2-content">
@@ -279,7 +285,7 @@ export default function CreatorStudioV2(){
         {tab==="review"&&<div className="cv2-card">
           <div className="section-head"><div><p className="cv2-eyebrow">The place</p><h3>Café details</h3></div><span>Link to the shortlist to get the right branch and map location.</span></div>
           <div className="cv2-fields">
-            <label className="wide">Copenhagen 50 match<select value={selected.catalogId||""} onChange={e=>linkCatalog(e.target.value)}><option value="">Not linked / custom café</option>{catalog.map(item=><option key={item.id} value={item.id}>#{item.rank} · {item.name}</option>)}</select></label>
+            <label className="wide">Top 50 match<select value={selected.catalogId||""} onChange={e=>linkCatalog(e.target.value)}><option value="">Not linked / custom café</option>{catalog.map(item=><option key={item.id} value={item.id}>{item.city} #{item.rank} · {item.name}</option>)}</select></label>
             <label>Name<input value={selected.name||""} onChange={e=>patch("name",e.target.value)}/></label>
             <label>Address<input value={selected.address||""} onChange={e=>patch("address",e.target.value)}/></label>
             <label>City<input value={selected.city||""} onChange={e=>patch("city",e.target.value)}/></label>

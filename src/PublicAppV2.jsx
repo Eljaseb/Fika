@@ -5,11 +5,41 @@ import "leaflet/dist/leaflet.css";
 import "./public-v2.css";
 
 const CAFE_API = "/api/cafes";
-const SAVED_KEY = "wtfika:saved-v3";
-const GEO_PREFIX = "wtfika:geo:v3:";
+const SAVED_KEY = "wtfika:saved-v4";
+const CITY_KEY = "wtfika:city-v1";
+const GEO_PREFIX = "wtfika:geo:v4:";
+
+const CITY_CONFIG = {
+  copenhagen: {
+    key:"copenhagen",
+    name:"Copenhagen",
+    country:"Denmark",
+    flag:"🇩🇰",
+    dataUrl:"/copenhagen50.json",
+    center:[55.6761,12.5683],
+    eyebrow:"CENTRAL COPENHAGEN · ~5 KM RADIUS",
+    title:"Copenhagen Top 50",
+    intro:"Specialty coffee, ambitious bakeries and destination cafés. Real tasting decides what is truly worth the fika.",
+    mapEyebrow:"THE 50 ON A COPENHAGEN MAP",
+    mapTitle:"Plan your next Copenhagen café stop."
+  },
+  stockholm: {
+    key:"stockholm",
+    name:"Stockholm",
+    country:"Sweden",
+    flag:"🇸🇪",
+    dataUrl:"/stockholm50.json",
+    center:[59.3293,18.0686],
+    eyebrow:"CENTRAL STOCKHOLM · ~5 KM RADIUS",
+    title:"Stockholm Top 50",
+    intro:"A city built for fika: serious coffee, world-class bakeries and classic konditori. Real tasting decides what earns the Fika score.",
+    mapEyebrow:"THE 50 ON A STOCKHOLM MAP",
+    mapTitle:"Plan your next Stockholm fika stop."
+  }
+};
 
 function normalize(value="") {
-  return value.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/&/g,"and").replace(/[^a-z0-9]+/g," ").trim();
+  return String(value).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/&/g,"and").replace(/[^a-z0-9]+/g," ").trim();
 }
 
 function avg(values) {
@@ -77,21 +107,21 @@ function mapIcon(rated,score) {
   return L.divIcon({
     className:"wtf-map-icon-wrap",
     html:`<div class="wtf-map-pin ${rated ? "rated" : "todo"}"><span>☕</span>${rated && score ? `<b>${score}</b>` : ""}</div>`,
-    iconSize:[44,52],
-    iconAnchor:[22,50],
-    popupAnchor:[0,-45]
+    iconSize:[40,48],
+    iconAnchor:[20,46],
+    popupAnchor:[0,-42]
   });
 }
 
-async function geocode(address) {
+async function geocode(address,city,country) {
   if (!address) return null;
-  const key = GEO_PREFIX + address;
+  const key = GEO_PREFIX + city + ":" + address;
   try {
     const cached = JSON.parse(localStorage.getItem(key) || "null");
     if (cached?.lat && cached?.lng) return cached;
   } catch {}
   try {
-    const url = "https://photon.komoot.io/api/?limit=1&q=" + encodeURIComponent(address + ", Copenhagen, Denmark");
+    const url = "https://photon.komoot.io/api/?limit=1&q=" + encodeURIComponent([address,city,country].filter(Boolean).join(", "));
     const res = await fetch(url,{headers:{Accept:"application/json"}});
     const data = await res.json();
     const coords = data?.features?.[0]?.geometry?.coordinates;
@@ -104,11 +134,12 @@ async function geocode(address) {
   }
 }
 
-function CafeMap({items,allMode=false,onOpen}) {
+function CafeMap({items,allMode=false,onOpen,city}) {
   const [points,setPoints] = useState([]);
 
   useEffect(()=>{
     let cancelled = false;
+    setPoints([]);
     (async()=>{
       const direct = [];
       const needGeo = [];
@@ -122,7 +153,7 @@ function CafeMap({items,allMode=false,onOpen}) {
       const workers = Array.from({length:Math.min(6,needGeo.length)}, async(_,workerIndex)=>{
         for (let i=workerIndex;i<needGeo.length;i+=6) {
           const item = needGeo[i];
-          const point = await geocode(item.review?.address || item.catalog.address);
+          const point = await geocode(item.review?.address || item.catalog.address,city.name,city.country);
           if (point && !cancelled) {
             setPoints(prev => prev.some(p=>p.catalog.id===item.catalog.id) ? prev : [...prev,{...item,...point}]);
           }
@@ -131,10 +162,10 @@ function CafeMap({items,allMode=false,onOpen}) {
       await Promise.all(workers);
     })();
     return ()=>{cancelled=true};
-  },[items]);
+  },[items,city.key]);
 
   return <div className="map-shell">
-    <MapContainer center={[55.6761,12.5683]} zoom={12.4} scrollWheelZoom className="wtf-map">
+    <MapContainer key={city.key} center={city.center} zoom={12.4} scrollWheelZoom className="wtf-map">
       <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
       {points.map(point=>{
         const rated = Boolean(point.review);
@@ -163,6 +194,7 @@ function CafeMap({items,allMode=false,onOpen}) {
 function CafeThumb({cafe,review}) {
   const cover = coverOf(review) || cafe.image;
   const [failed,setFailed] = useState(false);
+  useEffect(()=>setFailed(false),[cover]);
   return <div className="cafe-thumb">
     {cover && !failed ? <img src={cover} alt={cafe.name} loading="lazy" onError={()=>setFailed(true)}/> : <div className="thumb-fallback"><span>{initials(cafe.name)}</span><small>{cafe.rank ? `#${cafe.rank}` : "WT"}</small></div>}
   </div>;
@@ -186,7 +218,7 @@ function CatalogCard({cafe,review,saved,onSave,onOpen}) {
         {review?.scene && <span>{review.scene}</span>}
         {rated && <span className="rated-tag">✓ Fika-rated</span>}
       </div>
-      {!rated && <p className="public-signal">{publicRatingText(cafe)} · {cafe.distanceKm != null ? `≈ ${cafe.distanceKm} km from centre` : "Copenhagen"}</p>}
+      {!rated && <p className="public-signal">{publicRatingText(cafe)} · {cafe.distanceKm != null ? `≈ ${cafe.distanceKm} km from centre` : cafe.city || ""}</p>}
     </div>
     <button className={`bookmark ${saved ? "saved" : ""}`} onClick={(e)=>{e.stopPropagation();onSave(cafe.id)}} aria-label="Save"><Heart filled={saved}/></button>
   </article>;
@@ -201,7 +233,7 @@ function TasteRow({emoji,title,detail,score}) {
   </div>;
 }
 
-function Detail({cafe,review,onClose}) {
+function Detail({cafe,review,onClose,city}) {
   if (!cafe) return null;
   const cover = coverOf(review) || cafe.image;
   const score = review ? fika10(review) : null;
@@ -211,14 +243,14 @@ function Detail({cafe,review,onClose}) {
       <button className="detail-close" onClick={onClose}>×</button>
       <div className="detail-hero">
         {cover ? <img src={cover} alt={cafe.name}/> : <div className="detail-fallback">{initials(cafe.name)}</div>}
-        <div className="photo-chip left">⌖ {review?.city || "Copenhagen"}{review?.country ? `, ${review.country}` : ""}</div>
+        <div className="photo-chip left">⌖ {review?.city || city.name}</div>
         {(review?.scene || firstTag(cafe,review)) && <div className="photo-chip right">☀ {review?.scene || firstTag(cafe,review)}</div>}
         {review && <div className="hero-score"><strong>{score}</strong><span>FIKA SCORE</span></div>}
       </div>
       <div className="detail-sheet">
         <div className="detail-heading">
-          <p className="detail-kicker">{cafe.rank ? `Copenhagen 50 · #${cafe.rank}` : "Worth the Fika review"}</p>
-          <h2>{cafe.name} <span>{review?.country==="Sweden"?"🇸🇪":"🇩🇰"}</span></h2>
+          <p className="detail-kicker">{cafe.rank ? `${city.name} 50 · #${cafe.rank}` : "Worth the Fika review"}</p>
+          <h2>{cafe.name} <span>{review?.country==="Sweden" || city.country==="Sweden" ? "🇸🇪" : "🇩🇰"}</span></h2>
           {review ? <div className="detail-badges">
             {worthTrip && <span className="worth-trip">✓ WORTH THE TRIP</span>}
             {(review.bestFor || []).slice(0,3).map(tag=><span key={tag}>{tag}</span>)}
@@ -248,6 +280,11 @@ function Detail({cafe,review,onClose}) {
 }
 
 export default function PublicAppV2() {
+  const [cityKey,setCityKey] = useState(()=>{
+    const saved = localStorage.getItem(CITY_KEY);
+    return CITY_CONFIG[saved] ? saved : "copenhagen";
+  });
+  const city = CITY_CONFIG[cityKey];
   const [catalog,setCatalog] = useState([]);
   const [reviews,setReviews] = useState([]);
   const [loading,setLoading] = useState(true);
@@ -259,37 +296,80 @@ export default function PublicAppV2() {
   });
 
   useEffect(()=>localStorage.setItem(SAVED_KEY,JSON.stringify(saved)),[saved]);
+  useEffect(()=>localStorage.setItem(CITY_KEY,cityKey),[cityKey]);
 
   useEffect(()=>{
     let cancelled=false;
+    setLoading(true);
+    setSelected(null);
+    setQuery("");
     (async()=>{
       try{
-        const [catRes,revRes]=await Promise.all([fetch("/copenhagen50.json"),fetch(CAFE_API)]);
+        const [catRes,revRes]=await Promise.all([fetch(city.dataUrl),fetch(CAFE_API)]);
         const cat=await catRes.json();
         const rev=revRes.ok?await revRes.json():[];
-        if(!cancelled){setCatalog(cat?.cafes||[]);setReviews(Array.isArray(rev)?rev:[])}
+        if(!cancelled){
+          setCatalog((cat?.cafes||[]).map(item=>({...item,city:city.name,country:city.country})));
+          setReviews(Array.isArray(rev)?rev:[]);
+        }
       } finally { if(!cancelled)setLoading(false) }
     })();
     return()=>{cancelled=true};
-  },[]);
+  },[cityKey]);
 
   const enriched = useMemo(()=>catalog.map(cafe=>({catalog:cafe,review:matchReview(cafe,reviews)})),[catalog,reviews]);
   const ratedFrom50 = useMemo(()=>enriched.filter(x=>x.review),[enriched]);
-  const customRated = useMemo(()=>reviews.filter(review=>!enriched.some(x=>x.review&&String(x.review.id)===String(review.id))).map(review=>({
-    catalog:{id:"custom-"+review.id,rank:null,name:review.name||"Untitled café",address:review.address||[review.city,review.country].filter(Boolean).join(", "),distanceKm:null,externalRating:null,externalReviews:null,kind:"Worth the Fika review",why:review.reason||review.take||"Personally rated in Worth the Fika.",sources:["Worth the Fika"]},
-    review
-  })),[reviews,enriched]);
+
+  const customRated = useMemo(()=>{
+    const currentCity = normalize(city.name);
+    return reviews
+      .filter(review=>{
+        if(enriched.some(x=>x.review&&String(x.review.id)===String(review.id))) return false;
+        const reviewCity = normalize(review.city || "Copenhagen");
+        return reviewCity === currentCity;
+      })
+      .map(review=>({
+        catalog:{
+          id:"custom-"+review.id,
+          rank:null,
+          name:review.name||"Untitled café",
+          address:review.address||[review.city,review.country].filter(Boolean).join(", "),
+          city:review.city||city.name,
+          country:review.country||city.country,
+          distanceKm:null,
+          externalRating:null,
+          externalReviews:null,
+          kind:"Worth the Fika review",
+          why:review.reason||review.take||"Personally rated in Worth the Fika.",
+          sources:["Worth the Fika"]
+        },
+        review
+      }));
+  },[reviews,enriched,cityKey]);
+
   const rated = useMemo(()=>[...ratedFrom50,...customRated].sort((a,b)=>fikaScore(b.review)-fikaScore(a.review)),[ratedFrom50,customRated]);
 
+  const savedToken = id => city.key + ":" + id;
+  const isSaved = id => saved.includes(savedToken(id));
+  const toggleSave = id => {
+    const token=savedToken(id);
+    setSaved(prev=>prev.includes(token)?prev.filter(x=>x!==token):[...prev,token]);
+  };
+
   const visible = useMemo(()=>{
-    let list = view==="rated" ? rated : view==="saved" ? enriched.filter(x=>saved.includes(x.catalog.id)) : enriched;
+    let list = view==="rated" ? rated : view==="saved" ? enriched.filter(x=>isSaved(x.catalog.id)) : enriched;
     const q=normalize(query);
     if(q) list=list.filter(x=>normalize([x.catalog.name,x.catalog.address,x.catalog.kind,x.catalog.why,x.review?.scene,...(x.review?.bestFor||[])].join(" ")).includes(q));
     return list;
-  },[view,rated,enriched,saved,query]);
+  },[view,rated,enriched,saved,query,cityKey]);
 
   const selectedReview = selected ? (matchReview(selected,reviews) || customRated.find(x=>x.catalog.id===selected.id)?.review) : null;
-  const toggleSave=id=>setSaved(prev=>prev.includes(id)?prev.filter(x=>x!==id):[...prev,id]);
+
+  function changeCity(nextKey){
+    if(nextKey===cityKey)return;
+    setCityKey(nextKey);
+    setView("all");
+  }
 
   return <div className="wtf-shell">
     <header className="wtf-header">
@@ -298,7 +378,7 @@ export default function PublicAppV2() {
       <nav>
         <button className={view==="all"?"active":""} onClick={()=>setView("all")}>Top 50</button>
         <button className={view==="rated"?"active":""} onClick={()=>setView("rated")}>Fika-rated <i>{rated.length}</i></button>
-        <button className={view==="saved"?"active":""} onClick={()=>setView("saved")}>Saved <i>{saved.length}</i></button>
+        <button className={view==="saved"?"active":""} onClick={()=>setView("saved")}>Saved <i>{saved.filter(x=>x.startsWith(city.key+":")).length}</i></button>
         <a className="admin-link" href="/?admin=1">Admin / Review</a>
       </nav>
     </header>
@@ -306,9 +386,12 @@ export default function PublicAppV2() {
     <main className="wtf-main">
       <section className="app-intro">
         <div>
-          <p className="eyebrow">COPENHAGEN · WITHIN ~5 KM OF THE CENTRE</p>
-          <h1>{view==="rated" ? "Rated by Worth the Fika" : view==="saved" ? "Saved for your next fika" : "Copenhagen Top 50"}</h1>
-          <p>{view==="rated" ? "Personally tasted and rated in Worth the Fika." : view==="saved" ? "Your personal shortlist." : "Research finds the places. Real tasting decides what is truly worth the fika."}</p>
+          <div className="city-switcher" role="group" aria-label="Choose city">
+            {Object.values(CITY_CONFIG).map(option=><button key={option.key} className={cityKey===option.key?"active":""} onClick={()=>changeCity(option.key)}><span>{option.flag}</span>{option.name}</button>)}
+          </div>
+          <p className="eyebrow">{city.eyebrow}</p>
+          <h1>{view==="rated" ? `Fika-rated in ${city.name}` : view==="saved" ? `Saved in ${city.name}` : city.title}</h1>
+          <p>{view==="rated" ? `Personally tasted and rated in ${city.name} by Worth the Fika.` : view==="saved" ? `Your personal ${city.name} shortlist.` : city.intro}</p>
         </div>
       </section>
 
@@ -316,27 +399,27 @@ export default function PublicAppV2() {
         <div className="segmented">
           <button className={view==="all"?"active":""} onClick={()=>setView("all")}><span>Top 50</span><b>50</b></button>
           <button className={view==="rated"?"active":""} onClick={()=>setView("rated")}><span>Fika-rated</span><b>{rated.length}</b></button>
-          <button className={view==="saved"?"active":""} onClick={()=>setView("saved")}><span>Saved</span><b>{saved.length}</b></button>
+          <button className={view==="saved"?"active":""} onClick={()=>setView("saved")}><span>Saved</span><b>{saved.filter(x=>x.startsWith(city.key+":")).length}</b></button>
         </div>
-        <label className="search-field"><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search café, neighbourhood, vibe…"/></label>
+        <label className="search-field"><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder={`Search ${city.name} cafés, neighbourhoods, vibes…`}/></label>
       </section>
 
       {(view==="all" || view==="rated") && <section className="map-section">
         <div className="map-copy">
-          <p className="eyebrow">{view==="all"?"THE 50 ON A MAP":"YOUR TASTING MAP"}</p>
-          <h2>{view==="all"?"Plan your next café stop.":"Where you have already been."}</h2>
+          <p className="eyebrow">{view==="all"?city.mapEyebrow:"YOUR TASTING MAP"}</p>
+          <h2>{view==="all"?city.mapTitle:`Where you have been in ${city.name}.`}</h2>
           <p>{view==="all"?"Green pins are cafés already Fika-rated. Cream pins are still waiting for a real tasting.":"Only cafés personally rated in Worth the Fika appear here."}</p>
         </div>
-        <CafeMap items={view==="all"?enriched:rated} allMode={view==="all"} onOpen={setSelected}/>
+        <CafeMap items={view==="all"?enriched:rated} allMode={view==="all"} onOpen={setSelected} city={city}/>
       </section>}
 
       <section className="list-section">
         <div className="list-heading">
-          <div><p className="eyebrow">{view==="rated"?"FIKA-RATED":view==="saved"?"SAVED PLACES":"THE SHORTLIST"}</p><h2>{loading?"Loading…":`${visible.length} cafés`}</h2></div>
-          <p>{view==="all"?"A curated shortlist built from guide recognition, current public reputation and distinctiveness.":"Tap a café to open its full review card."}</p>
+          <div><p className="eyebrow">{view==="rated"?"FIKA-RATED":view==="saved"?"SAVED PLACES":`${city.name.toUpperCase()} SHORTLIST`}</p><h2>{loading?"Loading…":`${visible.length} cafés`}</h2></div>
+          <p>{view==="all"?`A curated ${city.name} shortlist built from guide recognition, public reputation and distinctiveness.`:"Tap a café to open its full review card."}</p>
         </div>
         <div className="cafe-cards">
-          {visible.map(({catalog:cafe,review})=><CatalogCard key={cafe.id} cafe={cafe} review={review} saved={saved.includes(cafe.id)} onSave={toggleSave} onOpen={setSelected}/>)}
+          {visible.map(({catalog:cafe,review})=><CatalogCard key={cafe.id} cafe={cafe} review={review} saved={isSaved(cafe.id)} onSave={toggleSave} onOpen={setSelected}/>)}
         </div>
       </section>
 
@@ -346,6 +429,6 @@ export default function PublicAppV2() {
       </section>
     </main>
 
-    <Detail cafe={selected} review={selectedReview} onClose={()=>setSelected(null)}/>
+    <Detail cafe={selected} review={selectedReview} onClose={()=>setSelected(null)} city={city}/>
   </div>;
 }
