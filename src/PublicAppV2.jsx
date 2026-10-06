@@ -89,6 +89,73 @@ function InstagramLink({compact=false}) {
   </a>;
 }
 
+function MailIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5h16v11H4z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/><path d="m4.8 7.3 7.2 5.6 7.2-5.6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+}
+
+function ContactButton({onClick}) {
+  return <button className="contact-button" onClick={onClick} aria-label="Contact Worth the Fika"><MailIcon/><span>Contact</span></button>;
+}
+
+function ContactModal({open,onClose,city}) {
+  const [name,setName]=useState("");
+  const [email,setEmail]=useState("");
+  const [message,setMessage]=useState("");
+  const [status,setStatus]=useState("");
+
+  useEffect(()=>{
+    if(!open)return;
+    const onKey=e=>{if(e.key==="Escape")onClose()};
+    window.addEventListener("keydown",onKey);
+    return()=>window.removeEventListener("keydown",onKey);
+  },[open,onClose]);
+
+  if(!open)return null;
+
+  async function submit(e){
+    e.preventDefault();
+    setStatus("Sending…");
+    const body=new URLSearchParams({
+      "form-name":"fika-business-interest",
+      "subject":"New Worth the Fika message",
+      "business_name":"",
+      "contact_name":name,
+      "email":email,
+      "city":city?.name||"",
+      "message":message,
+      "bot-field":""
+    });
+    try{
+      const res=await fetch("/",{
+        method:"POST",
+        headers:{"Content-Type":"application/x-www-form-urlencoded"},
+        body:body.toString()
+      });
+      if(!res.ok)throw new Error("send_failed");
+      setStatus("Message sent ✓");
+      setName("");setEmail("");setMessage("");
+    }catch{
+      setStatus("Could not send. Please try again.");
+    }
+  }
+
+  return <div className="contact-backdrop" onMouseDown={onClose}>
+    <section className="contact-modal" onMouseDown={e=>e.stopPropagation()}>
+      <button className="contact-close" onClick={onClose} aria-label="Close">×</button>
+      <p className="eyebrow">CONTACT WORTH THE FIKA</p>
+      <h2>Send a message</h2>
+      <p className="contact-intro">Questions, café suggestions or collaborations — write here. Your message goes privately to the person behind Worth the Fika.</p>
+      <form onSubmit={submit}>
+        <label>Name<input value={name} onChange={e=>setName(e.target.value)} autoComplete="name" placeholder="Your name"/></label>
+        <label>Email<input type="email" required value={email} onChange={e=>setEmail(e.target.value)} autoComplete="email" placeholder="you@example.com"/></label>
+        <label>Message<textarea required rows="6" value={message} onChange={e=>setMessage(e.target.value)} placeholder="Write your message…"/></label>
+        <button className="send-message" type="submit" disabled={status==="Sending…"}>Send message</button>
+        {status&&<p className={status.includes("sent")?"contact-status success":"contact-status"}>{status}</p>}
+      </form>
+    </section>
+  </div>;
+}
+
 function matchReview(catalogCafe,reviews) {
   const byId = reviews.find(r => r.catalogId && r.catalogId === catalogCafe.id);
   if (byId) return byId;
@@ -302,6 +369,7 @@ export default function PublicAppV2() {
   const [view,setView] = useState("all");
   const [query,setQuery] = useState("");
   const [selected,setSelected] = useState(null);
+  const [contactOpen,setContactOpen] = useState(false);
   const [saved,setSaved] = useState(()=>{
     try { return JSON.parse(localStorage.getItem(SAVED_KEY) || "[]"); } catch { return []; }
   });
@@ -386,13 +454,13 @@ export default function PublicAppV2() {
   return <div className="wtf-shell">
     <header className="wtf-header">
       <button className="wtf-brand" onClick={()=>setView("all")}><Mark/><span>Worth the Fika</span></button>
-      <div className="mobile-header-actions"><InstagramLink/><a className="mobile-admin-link" href="/?admin=1">Admin</a></div>
+      <div className="mobile-header-actions"><InstagramLink/><ContactButton onClick={()=>setContactOpen(true)}/></div>
       <nav>
         <button className={view==="all"?"active":""} onClick={()=>setView("all")}>Top 50</button>
         <button className={view==="rated"?"active":""} onClick={()=>setView("rated")}>Fika-rated <i>{rated.length}</i></button>
         <button className={view==="saved"?"active":""} onClick={()=>setView("saved")}>Saved <i>{saved.filter(x=>x.startsWith(city.key+":")).length}</i></button>
         <InstagramLink/>
-        <a className="admin-link" href="/?admin=1">Admin / Review</a>
+        <ContactButton onClick={()=>setContactOpen(true)}/>
       </nav>
     </header>
 
@@ -408,7 +476,7 @@ export default function PublicAppV2() {
               <p className="eyebrow">{city.flag} {city.name.toUpperCase()} CAFÉ GUIDE</p>
               <h1>{city.name}<br/><em>Top 50</em></h1>
               <p className="hero-question">50 places. One question: <strong>worth the fika?</strong></p>
-              <div className="hero-chips"><span>Central · ~5 km</span><span>{rated.length} Fika-rated</span><InstagramLink compact/></div>
+
             </div>
             <div className="hero-mosaic">
               {featured.map(({catalog:cafe,review},index)=>{
@@ -462,5 +530,6 @@ export default function PublicAppV2() {
     </main>
 
     <Detail cafe={selected} review={selectedReview} onClose={()=>setSelected(null)} city={city}/>
+    <ContactModal open={contactOpen} onClose={()=>setContactOpen(false)} city={city}/>
   </div>;
 }
