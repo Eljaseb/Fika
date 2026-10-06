@@ -8,6 +8,7 @@ const CAFE_API = "/api/cafes";
 const SAVED_KEY = "wtfika:saved-v4";
 const CITY_KEY = "wtfika:city-v1";
 const GEO_PREFIX = "wtfika:geo:v4:";
+const INSTAGRAM_URL = "https://www.instagram.com/worththefika/";
 
 const CITY_CONFIG = {
   copenhagen: {
@@ -76,6 +77,16 @@ function Mark() {
 
 function Heart({filled=false}) {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.25s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.85c0 5.6-7.5 10.2-7.5 10.2Z" fill={filled?"currentColor":"none"} stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/></svg>;
+}
+
+function InstagramIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.2" y="3.2" width="17.6" height="17.6" rx="5.2" fill="none" stroke="currentColor" strokeWidth="1.8"/><circle cx="12" cy="12" r="4.1" fill="none" stroke="currentColor" strokeWidth="1.8"/><circle cx="17.4" cy="6.8" r="1.15" fill="currentColor"/></svg>;
+}
+
+function InstagramLink({compact=false}) {
+  return <a className={compact?"instagram-link compact":"instagram-link"} href={INSTAGRAM_URL} aria-label="Open Worth the Fika on Instagram" rel="noreferrer">
+    <InstagramIcon/><span>{compact?"Instagram":"@worththefika"}</span>
+  </a>;
 }
 
 function matchReview(catalogCafe,reviews) {
@@ -272,7 +283,7 @@ function Detail({cafe,review,onClose,city}) {
             <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cafe.name+" "+cafe.address)}`} target="_blank" rel="noreferrer">Open in Maps</a>
             {!coverOf(review) && cafe.imageSource && <a className="source-link" href={cafe.imageSource} target="_blank" rel="noreferrer">Photo source</a>}
           </div>
-          <span>Worth the Fika</span>
+          <div className="detail-social"><InstagramLink compact/><span>Worth the Fika</span></div>
         </div>
       </div>
     </section>
@@ -348,6 +359,7 @@ export default function PublicAppV2() {
   },[reviews,enriched,cityKey]);
 
   const rated = useMemo(()=>[...ratedFrom50,...customRated].sort((a,b)=>fikaScore(b.review)-fikaScore(a.review)),[ratedFrom50,customRated]);
+  const featured = useMemo(()=>enriched.filter(x=>x.catalog.image || coverOf(x.review)).slice(0,3),[enriched]);
 
   const savedToken = id => city.key + ":" + id;
   const isSaved = id => saved.includes(savedToken(id));
@@ -374,24 +386,45 @@ export default function PublicAppV2() {
   return <div className="wtf-shell">
     <header className="wtf-header">
       <button className="wtf-brand" onClick={()=>setView("all")}><Mark/><span>Worth the Fika</span></button>
-      <a className="mobile-admin-link" href="/?admin=1">Admin</a>
+      <div className="mobile-header-actions"><InstagramLink/><a className="mobile-admin-link" href="/?admin=1">Admin</a></div>
       <nav>
         <button className={view==="all"?"active":""} onClick={()=>setView("all")}>Top 50</button>
         <button className={view==="rated"?"active":""} onClick={()=>setView("rated")}>Fika-rated <i>{rated.length}</i></button>
         <button className={view==="saved"?"active":""} onClick={()=>setView("saved")}>Saved <i>{saved.filter(x=>x.startsWith(city.key+":")).length}</i></button>
+        <InstagramLink/>
         <a className="admin-link" href="/?admin=1">Admin / Review</a>
       </nav>
     </header>
 
     <main className="wtf-main">
-      <section className="app-intro">
-        <div>
+      <section className={`app-intro ${view==="all"?"visual-home":""}`}>
+        <div className="intro-main">
           <div className="city-switcher" role="group" aria-label="Choose city">
             {Object.values(CITY_CONFIG).map(option=><button key={option.key} className={cityKey===option.key?"active":""} onClick={()=>changeCity(option.key)}><span>{option.flag}</span>{option.name}</button>)}
           </div>
-          <p className="eyebrow">{city.eyebrow}</p>
-          <h1>{view==="rated" ? `Fika-rated in ${city.name}` : view==="saved" ? `Saved in ${city.name}` : city.title}</h1>
-          <p>{view==="rated" ? `Personally tasted and rated in ${city.name} by Worth the Fika.` : view==="saved" ? `Your personal ${city.name} shortlist.` : city.intro}</p>
+
+          {view==="all" ? <div className="hero-layout">
+            <div className="hero-copy">
+              <p className="eyebrow">{city.flag} {city.name.toUpperCase()} CAFÉ GUIDE</p>
+              <h1>{city.name}<br/><em>Top 50</em></h1>
+              <p className="hero-question">50 places. One question: <strong>worth the fika?</strong></p>
+              <div className="hero-chips"><span>Central · ~5 km</span><span>{rated.length} Fika-rated</span><InstagramLink compact/></div>
+            </div>
+            <div className="hero-mosaic">
+              {featured.map(({catalog:cafe,review},index)=>{
+                const image=coverOf(review)||cafe.image;
+                return <button key={cafe.id} className={`hero-cafe hero-cafe-${index+1}`} onClick={()=>setSelected(cafe)}>
+                  {image ? <img src={image} alt={cafe.name}/> : <div className="hero-fallback">{initials(cafe.name)}</div>}
+                  <span className="hero-rank">#{cafe.rank}</span>
+                  <div><small>{firstTag(cafe,review)}</small><strong>{cafe.name}</strong></div>
+                </button>;
+              })}
+            </div>
+          </div> : <>
+            <p className="eyebrow">{city.flag} {city.name.toUpperCase()}</p>
+            <h1>{view==="rated" ? `Fika-rated in ${city.name}` : `Saved in ${city.name}`}</h1>
+            <p className="compact-intro">{view==="rated" ? "Personally tasted. Independently scored." : "Your own shortlist for later."}</p>
+          </>}
         </div>
       </section>
 
@@ -406,9 +439,8 @@ export default function PublicAppV2() {
 
       {(view==="all" || view==="rated") && <section className="map-section">
         <div className="map-copy">
-          <p className="eyebrow">{view==="all"?city.mapEyebrow:"YOUR TASTING MAP"}</p>
-          <h2>{view==="all"?city.mapTitle:`Where you have been in ${city.name}.`}</h2>
-          <p>{view==="all"?"Green pins are cafés already Fika-rated. Cream pins are still waiting for a real tasting.":"Only cafés personally rated in Worth the Fika appear here."}</p>
+          <p className="eyebrow">{view==="all"?`MAP · ${city.name.toUpperCase()}`:"YOUR FIKA MAP"}</p>
+          <h2>{view==="all"?"Find your next fika.":`Your ${city.name} tastings.`}</h2>
         </div>
         <CafeMap items={view==="all"?enriched:rated} allMode={view==="all"} onOpen={setSelected} city={city}/>
       </section>}
@@ -416,7 +448,7 @@ export default function PublicAppV2() {
       <section className="list-section">
         <div className="list-heading">
           <div><p className="eyebrow">{view==="rated"?"FIKA-RATED":view==="saved"?"SAVED PLACES":`${city.name.toUpperCase()} SHORTLIST`}</p><h2>{loading?"Loading…":`${visible.length} cafés`}</h2></div>
-          <p>{view==="all"?`A curated ${city.name} shortlist built from guide recognition, public reputation and distinctiveness.`:"Tap a café to open its full review card."}</p>
+          <p>{view==="all"?"Tap a café to see why it made the list.":"Tap to open the full Fika card."}</p>
         </div>
         <div className="cafe-cards">
           {visible.map(({catalog:cafe,review})=><CatalogCard key={cafe.id} cafe={cafe} review={review} saved={isSaved(cafe.id)} onSave={toggleSave} onOpen={setSelected}/>)}
@@ -425,7 +457,7 @@ export default function PublicAppV2() {
 
       <section className="editorial-note">
         <div><Mark/><div><p className="eyebrow">THE FIKA STANDARD</p><h2>Public ratings help us choose where to go. They never become the Fika score.</h2></div></div>
-        <p>Every Worth the Fika score comes from an actual tasting review in the private Creator Studio.</p>
+        <div className="editorial-note-side"><p>Every Fika score comes from an actual tasting.</p><InstagramLink/></div>
       </section>
     </main>
 
