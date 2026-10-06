@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -338,29 +338,96 @@ function CatalogCard({cafe,review,saved,onSave,onOpen}) {
   </article>;
 }
 
-function TasteRow({emoji,title,detail,score}) {
-  if (!title) return null;
+function categoryHasData(category) {
+  return Boolean(category?.type || category?.note || category?.mod || category?.subtype || categoryAverage(category) > 0);
+}
+
+function TasteRow({emoji,label,title,detail,score}) {
+  if (!title && !score) return null;
   return <div className="taste-highlight">
     <div className="taste-icon">{emoji}</div>
-    <div><strong>{title}</strong>{detail && <p>{detail}</p>}</div>
-    <b>{score || "–"}</b>
+    <div className="taste-copy">
+      <span className="taste-label">{label}</span>
+      <strong>{title || label}</strong>
+      {detail && <p>{detail}</p>}
+    </div>
+    <div className="taste-score"><b>{score || "–"}</b><small>/10</small></div>
+  </div>;
+}
+
+function CafeLocationMap({cafe,review,city}) {
+  const [point,setPoint] = useState(null);
+
+  useEffect(()=>{
+    let cancelled=false;
+    setPoint(null);
+    (async()=>{
+      const lat=Number(review?.lat ?? cafe?.lat);
+      const lng=Number(review?.lng ?? cafe?.lng);
+      if(Number.isFinite(lat)&&Number.isFinite(lng)&&lat&&lng){
+        if(!cancelled)setPoint({lat,lng});
+        return;
+      }
+      const found=await geocode(review?.address || cafe?.address,city.name,city.country);
+      if(found&&!cancelled)setPoint(found);
+    })();
+    return()=>{cancelled=true};
+  },[cafe?.id,review?.id,city.key]);
+
+  return <div className="detail-location">
+    <div className="detail-location-head">
+      <div><p className="section-label">LOCATION</p><h3>{cafe?.address || city.name}</h3></div>
+      <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((cafe?.name||"")+" "+(cafe?.address||city.name))}`} target="_blank" rel="noreferrer">Open in Maps</a>
+    </div>
+    {point ? <div className="single-cafe-map">
+      <MapContainer key={`${cafe?.id}-${point.lat}-${point.lng}`} center={[point.lat,point.lng]} zoom={15} scrollWheelZoom={false} dragging className="single-map">
+        <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
+        <Marker position={[point.lat,point.lng]} icon={mapIcon(Boolean(review),review?fika10(review):null)}/>
+      </MapContainer>
+    </div> : <div className="single-map-loading">Locating café…</div>}
   </div>;
 }
 
 function Detail({cafe,review,onClose,city}) {
+  const [photoIndex,setPhotoIndex] = useState(0);
+  const touchStartX = useRef(null);
+  useEffect(()=>setPhotoIndex(0),[cafe?.id,review?.id]);
+
   if (!cafe) return null;
-  const cover = coverOf(review) || cafe.image;
+
+  const adminPhotos = Array.isArray(review?.imgs) ? review.imgs.filter(Boolean) : [];
+  const photos = Array.from(new Set(adminPhotos.length ? adminPhotos : [cafe.image].filter(Boolean)));
+  const activePhoto = photos[photoIndex] || cafe.image;
   const score = review ? fika10(review) : null;
+  const coffeeScore = review && categoryHasData(review.drink) ? category10(review.drink) : null;
+  const pastryScore = review && categoryHasData(review.pastry) ? category10(review.pastry) : null;
   const worthTrip = review && fikaScore(review) >= 80;
+
+  const nextPhoto=()=>setPhotoIndex(i=>photos.length ? (i+1)%photos.length : 0);
+  const prevPhoto=()=>setPhotoIndex(i=>photos.length ? (i-1+photos.length)%photos.length : 0);
+
   return <div className="detail-backdrop" onMouseDown={onClose}>
     <section className="editorial-detail" onMouseDown={e=>e.stopPropagation()}>
       <button className="detail-close" onClick={onClose}>×</button>
-      <div className="detail-hero">
-        {cover ? <img src={cover} alt={cafe.name}/> : <div className="detail-fallback">{initials(cafe.name)}</div>}
+      <div className="detail-hero" onTouchStart={e=>{touchStartX.current=e.touches?.[0]?.clientX ?? null}} onTouchEnd={e=>{
+        const end=e.changedTouches?.[0]?.clientX;
+        if(touchStartX.current==null||end==null||photos.length<2)return;
+        const delta=end-touchStartX.current;
+        if(Math.abs(delta)>40)(delta<0?nextPhoto:prevPhoto)();
+        touchStartX.current=null;
+      }}>
+        {activePhoto ? <img key={activePhoto} src={activePhoto} alt={cafe.name}/> : <div className="detail-fallback">{initials(cafe.name)}</div>}
         <div className="photo-chip left">⌖ {review?.city || city.name}</div>
         {(review?.scene || firstTag(cafe,review)) && <div className="photo-chip right">☀ {review?.scene || firstTag(cafe,review)}</div>}
+        {photos.length>1 && <>
+          <button className="gallery-arrow gallery-prev" onClick={e=>{e.stopPropagation();prevPhoto()}} aria-label="Previous café photo">‹</button>
+          <button className="gallery-arrow gallery-next" onClick={e=>{e.stopPropagation();nextPhoto()}} aria-label="Next café photo">›</button>
+          <div className="gallery-count">{photoIndex+1} / {photos.length}</div>
+          <div className="gallery-dots">{photos.map((_,i)=><button key={i} className={i===photoIndex?"active":""} onClick={e=>{e.stopPropagation();setPhotoIndex(i)}} aria-label={`Show photo ${i+1}`}/>)}</div>
+        </>}
         {review && <div className="hero-score"><strong>{score}</strong><span>FIKA SCORE</span></div>}
       </div>
+
       <div className="detail-sheet">
         <div className="detail-heading">
           <p className="detail-kicker">{cafe.rank ? `${city.name} 50 · #${cafe.rank}` : "Worth the Fika review"}</p>
@@ -370,21 +437,27 @@ function Detail({cafe,review,onClose,city}) {
             {(review.bestFor || []).slice(0,3).map(tag=><span key={tag}>{tag}</span>)}
           </div> : <span className="not-rated-pill">Not rated by Worth the Fika yet</span>}
         </div>
+
         {review ? <>
+          <div className="rating-summary">
+            <div className="rating-summary-item overall"><span>Overall</span><strong>{score}</strong><small>/10</small></div>
+            {coffeeScore && <div className="rating-summary-item"><span>☕ Coffee</span><strong>{coffeeScore}</strong><small>/10</small></div>}
+            {pastryScore && <div className="rating-summary-item"><span>🥐 Pastry</span><strong>{pastryScore}</strong><small>/10</small></div>}
+          </div>
           <div className="taste-section">
             <p className="section-label">TASTING HIGHLIGHTS</p>
-            <TasteRow emoji="☕" title={review.drink?.type} detail={review.drink?.note || review.drink?.mod} score={category10(review.drink)}/>
-            <TasteRow emoji="🥐" title={review.pastry?.type} detail={review.pastry?.note || review.pastry?.subtype} score={category10(review.pastry)}/>
+            {categoryHasData(review.drink) && <TasteRow emoji="☕" label="Coffee" title={review.drink?.type || "Coffee"} detail={review.drink?.note || review.drink?.mod} score={coffeeScore}/>}
+            {categoryHasData(review.pastry) && <TasteRow emoji="🥐" label="Pastry" title={review.pastry?.type || review.pastry?.subtype || "Pastry"} detail={review.pastry?.note || review.pastry?.subtype} score={pastryScore}/>}
           </div>
           {(review.reason || review.take) && <p className="detail-verdict">{review.reason || review.take}</p>}
         </> : <>
           <p className="detail-verdict">{cafe.why}</p>
           <div className="research-signal"><strong>{publicRatingText(cafe)}</strong><span>Public ratings are only a discovery signal. The Fika score appears after a real tasting review.</span></div>
         </>}
+
+        <CafeLocationMap cafe={cafe} review={review} city={city}/>
+
         <div className="detail-footer">
-          <div className="detail-footer-links">
-            <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cafe.name+" "+cafe.address)}`} target="_blank" rel="noreferrer">Open in Maps</a>
-          </div>
           <div className="detail-social">{cafe.instagram && <InstagramLink compact url={cafe.instagram} label="Café Instagram"/>}<span>Worth the Fika</span></div>
         </div>
       </div>
