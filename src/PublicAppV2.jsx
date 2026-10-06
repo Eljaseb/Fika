@@ -135,13 +135,14 @@ function CafeMap({items,allMode=false,onOpen}) {
 
   return <div className="map-shell">
     <MapContainer center={[55.6761,12.5683]} zoom={12.4} scrollWheelZoom className="wtf-map">
-      <TileLayer attribution='&copy; OpenStreetMap &copy; CARTO' url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"/>
+      <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"/>
       {points.map(point=>{
         const rated = Boolean(point.review);
         const score = rated ? fika10(point.review) : null;
         return <Marker key={point.catalog.id} position={[point.lat,point.lng]} icon={mapIcon(rated,score)}>
           <Popup>
             <div className="map-popup">
+              {point.catalog.image && <img className="map-popup-photo" src={point.catalog.image} alt="" loading="lazy"/>}
               <strong>{point.catalog.name}</strong>
               <span>{rated ? `Worth the Fika · ${score}/10` : "Not rated yet"}</span>
               <small>{point.catalog.address}</small>
@@ -160,17 +161,17 @@ function CafeMap({items,allMode=false,onOpen}) {
 }
 
 function CafeThumb({cafe,review}) {
-  const cover = coverOf(review);
+  const cover = coverOf(review) || cafe.image;
+  const [failed,setFailed] = useState(false);
   return <div className="cafe-thumb">
-    {cover ? <img src={cover} alt="" loading="lazy"/> : <div className="thumb-fallback"><span>{initials(cafe.name)}</span><small>{cafe.rank ? `#${cafe.rank}` : "WT"}</small></div>}
+    {cover && !failed ? <img src={cover} alt={cafe.name} loading="lazy" onError={()=>setFailed(true)}/> : <div className="thumb-fallback"><span>{initials(cafe.name)}</span><small>{cafe.rank ? `#${cafe.rank}` : "WT"}</small></div>}
   </div>;
 }
 
 function CatalogCard({cafe,review,saved,onSave,onOpen}) {
   const rated = Boolean(review);
   const score = rated ? fika10(review) : null;
-  return <article className={`cafe-list-card ${rated ? "is-rated" : ""}`}>
-    <button className="card-open-hit" onClick={()=>onOpen(cafe)} aria-label={`Open ${cafe.name}`}/>
+  return <article className={`cafe-list-card ${rated ? "is-rated" : ""}`} onClick={()=>onOpen(cafe)} role="button" tabIndex={0} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();onOpen(cafe)}}}>
     <CafeThumb cafe={cafe} review={review}/>
     <div className="cafe-list-copy">
       <div className="cafe-name-row">
@@ -202,7 +203,7 @@ function TasteRow({emoji,title,detail,score}) {
 
 function Detail({cafe,review,onClose}) {
   if (!cafe) return null;
-  const cover = coverOf(review);
+  const cover = coverOf(review) || cafe.image;
   const score = review ? fika10(review) : null;
   const worthTrip = review && fikaScore(review) >= 80;
   return <div className="detail-backdrop" onMouseDown={onClose}>
@@ -235,7 +236,10 @@ function Detail({cafe,review,onClose}) {
           <div className="research-signal"><strong>{publicRatingText(cafe)}</strong><span>Public ratings are only a discovery signal. The Fika score appears after a real tasting review.</span></div>
         </>}
         <div className="detail-footer">
-          <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cafe.name+" "+cafe.address)}`} target="_blank" rel="noreferrer">Open in Maps</a>
+          <div className="detail-footer-links">
+            <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cafe.name+" "+cafe.address)}`} target="_blank" rel="noreferrer">Open in Maps</a>
+            {!coverOf(review) && cafe.imageSource && <a className="source-link" href={cafe.imageSource} target="_blank" rel="noreferrer">Photo source</a>}
+          </div>
           <span>Worth the Fika</span>
         </div>
       </div>
