@@ -144,7 +144,7 @@ function CafeMap({items,allMode=false,onOpen}) {
             <div className="map-popup">
               {point.catalog.image && <img className="map-popup-photo" src={point.catalog.image} alt="" loading="lazy"/>}
               <strong>{point.catalog.name}</strong>
-              <span>{rated ? `Worth the Fika · ${score}/10` : "Not rated yet"}</span>
+              <span>{rated ? `Worth the Fika · ${score}/10` : "Not Fika-rated yet"}</span>
               <small>{point.catalog.address}</small>
               <button onClick={()=>onOpen?.(point.catalog)}>View café</button>
             </div>
