@@ -83,10 +83,46 @@ function InstagramIcon() {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.2" y="3.2" width="17.6" height="17.6" rx="5.2" fill="none" stroke="currentColor" strokeWidth="1.8"/><circle cx="12" cy="12" r="4.1" fill="none" stroke="currentColor" strokeWidth="1.8"/><circle cx="17.4" cy="6.8" r="1.15" fill="currentColor"/></svg>;
 }
 
-function InstagramLink({compact=false}) {
-  return <a className={compact?"instagram-link compact":"instagram-link"} href={INSTAGRAM_URL} aria-label="Open Worth the Fika on Instagram" rel="noreferrer">
-    <InstagramIcon/><span>{compact?"Instagram":"@worththefika"}</span>
+function InstagramLink({compact=false,url=INSTAGRAM_URL,label}) {
+  const text=label || (compact?"Instagram":"@worththefika");
+  return <a className={compact?"instagram-link compact":"instagram-link"} href={url} aria-label={`Open ${text} on Instagram`} rel="noreferrer">
+    <InstagramIcon/><span>{text}</span>
   </a>;
+}
+
+function AboutIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8.2" cy="9" r="2.7" fill="none" stroke="currentColor" strokeWidth="1.8"/><circle cx="15.8" cy="9" r="2.7" fill="none" stroke="currentColor" strokeWidth="1.8"/><path d="M3.8 18.2c.5-2.8 2.4-4.5 4.7-4.5 1.4 0 2.6.5 3.5 1.4.9-.9 2.1-1.4 3.5-1.4 2.3 0 4.2 1.7 4.7 4.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/></svg>;
+}
+
+function AboutButton({onClick}) {
+  return <button className="about-button" onClick={onClick} aria-label="About Worth the Fika"><AboutIcon/><span>About</span></button>;
+}
+
+function AboutModal({open,onClose}) {
+  useEffect(()=>{
+    if(!open)return;
+    const onKey=e=>{if(e.key==="Escape")onClose()};
+    window.addEventListener("keydown",onKey);
+    return()=>window.removeEventListener("keydown",onKey);
+  },[open,onClose]);
+
+  if(!open)return null;
+  return <div className="about-backdrop" onMouseDown={onClose}>
+    <section className="about-modal" onMouseDown={e=>e.stopPropagation()}>
+      <button className="about-close" onClick={onClose} aria-label="Close">×</button>
+      <div className="about-mark"><Mark/></div>
+      <p className="eyebrow">ABOUT WORTH THE FIKA</p>
+      <h2>Good coffee is everywhere. A fika worth remembering is rarer.</h2>
+      <p>Worth the Fika is an independent, one-reviewer café guide. We research the most interesting cafés city by city, then visit them in person and rate the experience with the same standard every time.</p>
+      <p>Public ratings and local guides help build the shortlist, but they never become the Fika score. That score only comes after a real tasting — coffee, pastry, atmosphere, service and value.</p>
+      <div className="about-principles">
+        <span>☕ Personally tasted</span>
+        <span>🥐 Coffee + pastry first</span>
+        <span>✓ No paid rankings</span>
+      </div>
+      <p className="about-ending">Copenhagen and Stockholm are the beginning. The goal is simple: help you spend your café time somewhere genuinely worth the fika.</p>
+    </section>
+  </div>;
 }
 
 function MailIcon() {
@@ -348,9 +384,8 @@ function Detail({cafe,review,onClose,city}) {
         <div className="detail-footer">
           <div className="detail-footer-links">
             <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cafe.name+" "+cafe.address)}`} target="_blank" rel="noreferrer">Open in Maps</a>
-            {!coverOf(review) && cafe.imageSource && <a className="source-link" href={cafe.imageSource} target="_blank" rel="noreferrer">Photo source</a>}
           </div>
-          <div className="detail-social"><InstagramLink compact/><span>Worth the Fika</span></div>
+          <div className="detail-social">{cafe.instagram && <InstagramLink compact url={cafe.instagram} label="Café Instagram"/>}<span>Worth the Fika</span></div>
         </div>
       </div>
     </section>
@@ -369,6 +404,7 @@ export default function PublicAppV2() {
   const [view,setView] = useState("all");
   const [query,setQuery] = useState("");
   const [selected,setSelected] = useState(null);
+  const [aboutOpen,setAboutOpen] = useState(false);
   const [contactOpen,setContactOpen] = useState(false);
   const [saved,setSaved] = useState(()=>{
     try { return JSON.parse(localStorage.getItem(SAVED_KEY) || "[]"); } catch { return []; }
@@ -454,11 +490,12 @@ export default function PublicAppV2() {
   return <div className="wtf-shell">
     <header className="wtf-header">
       <button className="wtf-brand" onClick={()=>setView("all")}><Mark/><span>Worth the Fika</span></button>
-      <div className="mobile-header-actions"><InstagramLink/><ContactButton onClick={()=>setContactOpen(true)}/></div>
+      <div className="mobile-header-actions"><AboutButton onClick={()=>setAboutOpen(true)}/><InstagramLink/><ContactButton onClick={()=>setContactOpen(true)}/></div>
       <nav>
         <button className={view==="all"?"active":""} onClick={()=>setView("all")}>Top 50</button>
         <button className={view==="rated"?"active":""} onClick={()=>setView("rated")}>Fika-rated <i>{rated.length}</i></button>
         <button className={view==="saved"?"active":""} onClick={()=>setView("saved")}>Saved <i>{saved.filter(x=>x.startsWith(city.key+":")).length}</i></button>
+        <AboutButton onClick={()=>setAboutOpen(true)}/>
         <InstagramLink/>
         <ContactButton onClick={()=>setContactOpen(true)}/>
       </nav>
@@ -490,8 +527,8 @@ export default function PublicAppV2() {
             </div>
           </div> : <>
             <p className="eyebrow">{city.flag} {city.name.toUpperCase()}</p>
-            <h1>{view==="rated" ? `Fika-rated in ${city.name}` : `Saved in ${city.name}`}</h1>
-            <p className="compact-intro">{view==="rated" ? "Personally tasted. Independently scored." : "Your own shortlist for later."}</p>
+            <h1>{view==="rated" ? `Fika-rated in ${city.name}` : view==="saved" ? `Saved in ${city.name}` : `${city.name} café map`}</h1>
+            <p className="compact-intro">{view==="rated" ? "Personally tasted. Independently scored." : view==="saved" ? "Your own shortlist for later." : "All 50 places in one view."}</p>
           </>}
         </div>
       </section>
@@ -501,19 +538,21 @@ export default function PublicAppV2() {
           <button className={view==="all"?"active":""} onClick={()=>setView("all")}><span>Top 50</span><b>50</b></button>
           <button className={view==="rated"?"active":""} onClick={()=>setView("rated")}><span>Fika-rated</span><b>{rated.length}</b></button>
           <button className={view==="saved"?"active":""} onClick={()=>setView("saved")}><span>Saved</span><b>{saved.filter(x=>x.startsWith(city.key+":")).length}</b></button>
+          <button className={view==="map"?"active":""} onClick={()=>setView("map")}><span>Map</span><b>⌖</b></button>
         </div>
         <label className="search-field"><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder={`Search ${city.name} cafés, neighbourhoods, vibes…`}/></label>
       </section>
 
-      {(view==="all" || view==="rated") && <section className="map-section">
+      {view==="map" && <section className="map-section map-tab-section">
         <div className="map-copy">
-          <p className="eyebrow">{view==="all"?`MAP · ${city.name.toUpperCase()}`:"YOUR FIKA MAP"}</p>
-          <h2>{view==="all"?"Find your next fika.":`Your ${city.name} tastings.`}</h2>
+          <p className="eyebrow">MAP · {city.name.toUpperCase()}</p>
+          <h2>Find your next fika.</h2>
+          <p>Green pins are Fika-rated. Cream pins are still waiting for a real tasting.</p>
         </div>
-        <CafeMap items={view==="all"?enriched:rated} allMode={view==="all"} onOpen={setSelected} city={city}/>
+        <CafeMap items={visible} allMode onOpen={setSelected} city={city}/>
       </section>}
 
-      <section className="list-section">
+      {view!=="map" && <section className="list-section">
         <div className="list-heading">
           <div><p className="eyebrow">{view==="rated"?"FIKA-RATED":view==="saved"?"SAVED PLACES":`${city.name.toUpperCase()} SHORTLIST`}</p><h2>{loading?"Loading…":`${visible.length} cafés`}</h2></div>
           <p>{view==="all"?"Tap a café to see why it made the list.":"Tap to open the full Fika card."}</p>
@@ -521,7 +560,7 @@ export default function PublicAppV2() {
         <div className="cafe-cards">
           {visible.map(({catalog:cafe,review})=><CatalogCard key={cafe.id} cafe={cafe} review={review} saved={isSaved(cafe.id)} onSave={toggleSave} onOpen={setSelected}/>)}
         </div>
-      </section>
+      </section>}
 
       <section className="editorial-note">
         <div><Mark/><div><p className="eyebrow">THE FIKA STANDARD</p><h2>Public ratings help us choose where to go. They never become the Fika score.</h2></div></div>
@@ -530,6 +569,7 @@ export default function PublicAppV2() {
     </main>
 
     <Detail cafe={selected} review={selectedReview} onClose={()=>setSelected(null)} city={city}/>
+    <AboutModal open={aboutOpen} onClose={()=>setAboutOpen(false)}/>
     <ContactModal open={contactOpen} onClose={()=>setContactOpen(false)} city={city}/>
   </div>;
 }
