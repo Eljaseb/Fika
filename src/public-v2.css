@@ -1399,3 +1399,21 @@ button,a{-webkit-tap-highlight-color:transparent}
 @media(max-width:380px){.tasting-criteria>div{grid-template-columns:minmax(85px,.9fr) minmax(80px,1.4fr);gap:12px}}
 
 .rating-summary{grid-template-columns:repeat(auto-fit,minmax(85px,1fr))}
+
+/* Reviews lead the guide; café details occupy the full viewport. */
+.detail-backdrop{padding:0;display:block;background:var(--cream);backdrop-filter:none}
+.detail-backdrop .editorial-detail{width:100%;max-width:none;height:100dvh;max-height:100dvh;border-radius:0;overflow-y:auto;overscroll-behavior:contain;box-shadow:none}
+.detail-topbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:calc(10px + env(safe-area-inset-top)) 18px 10px;background:#fffaf2;border-bottom:1px solid #e4d8c9}
+.detail-topbar>span{font:600 20px Georgia,serif;color:#432618}
+.detail-back{min-height:44px;padding:10px 18px;border:1px solid #d5c7b5;border-radius:999px;background:#fffaf2;color:#432618;font-size:16px;font-weight:750;cursor:pointer}
+.detail-sheet{max-width:900px;margin:auto;padding-bottom:calc(32px + env(safe-area-inset-bottom))}
+.tasting-breakdown{scroll-margin-top:90px}
+.rating-summary .rating-summary-item{padding:16px 12px;min-height:124px;row-gap:20px;border-radius:20px}
+.rating-summary .rating-summary-item>span{font-size:12px;letter-spacing:.01em;text-transform:none;display:flex;align-items:center;gap:5px}
+.rating-summary .rating-summary-item>span i{font-style:normal;font-size:23px;line-height:1}
+.rating-summary .rating-summary-item strong{font-size:clamp(34px,8vw,48px)}
+.rating-summary .rating-summary-item small{font-size:17px;padding-bottom:4px}
+.recent-reviews{min-width:0}.recent-reviews>.eyebrow{margin:0 0 16px}.recent-reviews .hero-rank{width:auto;min-width:72px;padding:0 12px;font-size:15px;border-radius:999px}
+@media(max-width:380px){.rating-summary .rating-summary-item{padding:13px 8px}.rating-summary .rating-summary-item>span{font-size:11px;gap:3px}.rating-summary .rating-summary-item>span i{font-size:19px}.rating-summary .rating-summary-item small{font-size:15px}}
+
+.hero-mosaic[data-count="0"]{display:none}.hero-mosaic[data-count="1"]{grid-template-columns:1fr}.hero-mosaic[data-count="2"]{grid-template-rows:1fr}.hero-mosaic[data-count="2"] .hero-cafe-1{grid-row:auto}

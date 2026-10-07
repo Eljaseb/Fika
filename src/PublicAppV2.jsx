@@ -389,6 +389,7 @@ function Detail({cafe,review,onClose,city}) {
   const touchStartX = useRef(null);
   useEffect(()=>{setPhotoIndex(0);setTasting(null)},[cafe?.id,review?.id]);
 
+  useEffect(()=>{if(!cafe)return;const previous=document.body.style.overflow;document.body.style.overflow="hidden";const escape=e=>{if(e.key==="Escape")onClose()};document.addEventListener("keydown",escape);return()=>{document.body.style.overflow=previous;document.removeEventListener("keydown",escape)}},[cafe,onClose]);
   if (!cafe) return null;
 
   const adminPhotos = Array.isArray(review?.imgs) ? review.imgs.filter(Boolean) : [];
@@ -403,8 +404,8 @@ function Detail({cafe,review,onClose,city}) {
   const prevPhoto=()=>setPhotoIndex(i=>photos.length ? (i-1+photos.length)%photos.length : 0);
 
   return <div className="detail-backdrop" onMouseDown={onClose}>
-    <section className="editorial-detail" onMouseDown={e=>e.stopPropagation()}>
-      <button className="detail-close" onClick={onClose}>×</button>
+    <section className="editorial-detail" role="dialog" aria-modal="true" aria-label={cafe.name} onMouseDown={e=>e.stopPropagation()}>
+      <div className="detail-topbar"><button autoFocus className="detail-back" onClick={onClose}>← Back</button><span>Worth the Fika</span></div>
       <div className="detail-hero" onTouchStart={e=>{touchStartX.current=e.touches?.[0]?.clientX ?? null}} onTouchEnd={e=>{
         const end=e.changedTouches?.[0]?.clientX;
         if(touchStartX.current==null||end==null||photos.length<2)return;
@@ -427,7 +428,7 @@ function Detail({cafe,review,onClose,city}) {
       <div className="detail-sheet">
         <div className="detail-heading">
           {reviewMonth(review?.visitedOn)&&<p className="review-date">🗓️ Reviewed {reviewMonth(review.visitedOn)}</p>}
-          <p className="detail-kicker">{cafe.rank ? `${city.name} 50 · #${cafe.rank}` : "Worth the Fika review"}</p>
+          <p className="detail-kicker">{review ? "Personally tasted · Worth the Fika" : "To explore · Not reviewed yet"}</p>
           <h2>{cafe.name} <span>{review?.country==="Sweden" || city.country==="Sweden" ? "🇸🇪" : "🇩🇰"}</span></h2>
           {review ? <div className="detail-badges">
             {worthTrip && <span className="worth-trip">✓ WORTH THE TRIP</span>}
@@ -437,9 +438,9 @@ function Detail({cafe,review,onClose,city}) {
 
         {review ? <>
           <div className="rating-summary">
-            <button className="rating-summary-item overall tasting-trigger" aria-expanded={tasting==="overall"} onClick={()=>setTasting(tasting==="overall"?null:"overall")}><span>Overall ↗</span><strong>{score}</strong><small>/10</small></button>
-            {coffeeScore && <button className="rating-summary-item tasting-trigger" aria-expanded={tasting==="drink"} onClick={()=>setTasting(tasting==="drink"?null:"drink")}><span>{foodEmoji(review.drink?.type)} Drink ↗</span><strong>{coffeeScore}</strong><small>/10</small></button>}
-            {pastryScore && <button className="rating-summary-item tasting-trigger" aria-expanded={tasting==="pastry"} onClick={()=>setTasting(tasting==="pastry"?null:"pastry")}><span>🥐 Pastry ↗</span><strong>{pastryScore}</strong><small>/10</small></button>}
+            <button className="rating-summary-item overall tasting-trigger" aria-expanded={tasting==="overall"} onClick={()=>setTasting(tasting==="overall"?null:"overall")}><span><i aria-hidden="true">⭐</i> Overall ↗</span><strong>{score}</strong><small>/10</small></button>
+            {coffeeScore && <button className="rating-summary-item tasting-trigger" aria-expanded={tasting==="drink"} onClick={()=>setTasting(tasting==="drink"?null:"drink")}><span><i aria-hidden="true">{foodEmoji(review.drink?.type)}</i> Drink ↗</span><strong>{coffeeScore}</strong><small>/10</small></button>}
+            {pastryScore && <button className="rating-summary-item tasting-trigger" aria-expanded={tasting==="pastry"} onClick={()=>setTasting(tasting==="pastry"?null:"pastry")}><span><i aria-hidden="true">🥐</i> Pastry ↗</span><strong>{pastryScore}</strong><small>/10</small></button>}
           </div>
           {tasting&&tasting!=="overall"&&<section ref={tastingRef} className="tasting-breakdown" aria-label="Detailed tasting ratings">
             <h3>{foodEmoji(review[tasting]?.type,tasting)} {review[tasting]?.type|| (tasting==="drink"?"Drink":"Pastry")}</h3>
@@ -477,7 +478,7 @@ export default function PublicAppV2() {
   const [catalog,setCatalog] = useState([]);
   const [reviews,setReviews] = useState([]);
   const [loading,setLoading] = useState(true);
-  const [view,setView] = useState("all");
+  const [view,setView] = useState("rated");
   const [query,setQuery] = useState("");
   const [selected,setSelected] = useState(null);
   const [aboutOpen,setAboutOpen] = useState(false);
@@ -538,8 +539,8 @@ export default function PublicAppV2() {
       }));
   },[reviews,enriched,cityKey]);
 
-  const rated = useMemo(()=>[...ratedFrom50,...customRated].sort((a,b)=>fikaScore(b.review)-fikaScore(a.review)),[ratedFrom50,customRated]);
-  const featured = useMemo(()=>enriched.filter(x=>x.catalog.image || coverOf(x.review)).slice(0,3),[enriched]);
+  const rated = useMemo(()=>[...ratedFrom50,...customRated].sort((a,b)=>(b.review.visitedOn||"").localeCompare(a.review.visitedOn||"")),[ratedFrom50,customRated]);
+  const featured = useMemo(()=>rated.slice(0,3),[rated]);
 
   const savedToken = id => city.key + ":" + id;
   const isSaved = id => saved.includes(savedToken(id));
@@ -549,27 +550,27 @@ export default function PublicAppV2() {
   };
 
   const visible = useMemo(()=>{
-    let list = view==="rated" ? rated : view==="saved" ? enriched.filter(x=>isSaved(x.catalog.id)) : enriched;
+    let list = view==="rated" ? rated : view==="saved" ? [...enriched,...customRated].filter(x=>isSaved(x.catalog.id)) : view==="all" ? enriched.filter(x=>!x.review) : [...enriched,...customRated];
     const q=normalize(query);
     if(q) list=list.filter(x=>normalize([x.catalog.name,x.catalog.address,x.catalog.kind,x.catalog.why,x.review?.scene,...(x.review?.bestFor||[])].join(" ")).includes(q));
     return list;
-  },[view,rated,enriched,saved,query,cityKey]);
+  },[view,rated,enriched,customRated,saved,query,cityKey]);
 
   const selectedReview = selected ? (matchReview(selected,reviews) || customRated.find(x=>x.catalog.id===selected.id)?.review) : null;
 
   function changeCity(nextKey){
     if(nextKey===cityKey)return;
     setCityKey(nextKey);
-    setView("all");
+    setView("rated");
   }
 
   return <div className="wtf-shell">
     <header className="wtf-header">
-      <button className="wtf-brand" onClick={()=>setView("all")}><Mark/><span>Worth the Fika</span></button>
+      <button className="wtf-brand" onClick={()=>setView("rated")}><Mark/><span>Worth the Fika</span></button>
       <div className="mobile-header-actions"><AboutButton onClick={()=>setAboutOpen(true)}/><InstagramLink/><ContactButton onClick={()=>setContactOpen(true)}/></div>
       <nav>
-        <button className={view==="all"?"active":""} onClick={()=>setView("all")}>Top 50</button>
-        <button className={view==="rated"?"active":""} onClick={()=>setView("rated")}>Fika-rated <i>{rated.length}</i></button>
+        <button className={view==="rated"?"active":""} onClick={()=>setView("rated")}>Reviews <i>{rated.length}</i></button>
+        <button className={view==="all"?"active":""} onClick={()=>setView("all")}>To explore</button>
         <button className={view==="saved"?"active":""} onClick={()=>setView("saved")}>Saved <i>{saved.filter(x=>x.startsWith(city.key+":")).length}</i></button>
         <AboutButton onClick={()=>setAboutOpen(true)}/>
         <InstagramLink/>
@@ -578,41 +579,41 @@ export default function PublicAppV2() {
     </header>
 
     <main className="wtf-main">
-      <section className={`app-intro ${view==="all"?"visual-home":""}`}>
+      <section className={`app-intro ${view==="rated"?"visual-home":""}`}>
         <div className="intro-main">
           <div className="city-switcher" role="group" aria-label="Choose city">
             {Object.values(CITY_CONFIG).map(option=><button key={option.key} className={cityKey===option.key?"active":""} onClick={()=>changeCity(option.key)}><span>{option.flag}</span>{option.name}</button>)}
           </div>
 
-          {view==="all" ? <div className="hero-layout">
+          {view==="rated" ? <div className="hero-layout">
             <div className="hero-copy">
-              <p className="eyebrow">{city.flag} {city.name.toUpperCase()} CAFÉ GUIDE</p>
-              <h1>{city.name}<br/><em>Top 50</em></h1>
-              <p className="hero-question">50 places. One question: <strong>worth the fika?</strong></p>
+              <p className="eyebrow">{city.flag} PERSONALLY TASTED IN {city.name.toUpperCase()}</p>
+              <h1>Worth<br/><em>the fika?</em></h1>
+              <p className="hero-question">Honest reviews. Real tastings. <strong>Find your next favourite.</strong></p>
 
             </div>
-            <div className="hero-mosaic">
+            <div className="recent-reviews"><p className="eyebrow">Recently reviewed</p><div className="hero-mosaic" data-count={featured.length}>
               {featured.map(({catalog:cafe,review},index)=>{
                 const image=coverOf(review)||cafe.image;
                 return <button key={cafe.id} className={`hero-cafe hero-cafe-${index+1}`} onClick={()=>setSelected(cafe)}>
                   {image ? <img src={image} alt={cafe.name}/> : <div className="hero-fallback">{initials(cafe.name)}</div>}
-                  <span className="hero-rank">#{cafe.rank}</span>
-                  <div><small>{firstTag(cafe,review)}</small><strong>{cafe.name}</strong></div>
+                  <span className="hero-rank">{fika10(review)} / 10</span>
+                  <div><small>{reviewMonth(review?.visitedOn)||"Personally reviewed"}</small><strong>{cafe.name}</strong></div>
                 </button>;
               })}
-            </div>
+            </div>{!loading&&!featured.length&&<p>Our first reviews in {city.name} are coming soon. Browse “To explore” for the tasting shortlist.</p>}</div>
           </div> : <>
             <p className="eyebrow">{city.flag} {city.name.toUpperCase()}</p>
-            <h1>{view==="rated" ? `Fika-rated in ${city.name}` : view==="saved" ? `Saved in ${city.name}` : `${city.name} café map`}</h1>
-            <p className="compact-intro">{view==="rated" ? "Personally tasted. Independently scored." : view==="saved" ? "Your own shortlist for later." : "All 50 places in one view."}</p>
+            <h1>{view==="all" ? `Next stops in ${city.name}` : view==="saved" ? `Saved in ${city.name}` : `${city.name} café map`}</h1>
+            <p className="compact-intro">{view==="all" ? "Our Top 50 shortlist — these cafés are still waiting for a personal review." : view==="saved" ? "Your own shortlist for later." : "All 50 places in one view."}</p>
           </>}
         </div>
       </section>
 
       <section className="filter-row">
         <div className="segmented">
-          <button className={view==="all"?"active":""} onClick={()=>setView("all")}><span>Top 50</span><b>50</b></button>
-          <button className={view==="rated"?"active":""} onClick={()=>setView("rated")}><span>Fika-rated</span><b>{rated.length}</b></button>
+          <button className={view==="rated"?"active":""} onClick={()=>setView("rated")}><span>Reviews</span><b>{rated.length}</b></button>
+          <button className={view==="all"?"active":""} onClick={()=>setView("all")}><span>To explore</span><b>{enriched.filter(x=>!x.review).length}</b></button>
           <button className={view==="saved"?"active":""} onClick={()=>setView("saved")}><span>Saved</span><b>{saved.filter(x=>x.startsWith(city.key+":")).length}</b></button>
           <button className={view==="map"?"active":""} onClick={()=>setView("map")}><span>Map</span><b>⌖</b></button>
         </div>
@@ -630,7 +631,7 @@ export default function PublicAppV2() {
 
       {view!=="map" && <section className="list-section">
         <div className="list-heading">
-          <div><p className="eyebrow">{view==="rated"?"FIKA-RATED":view==="saved"?"SAVED PLACES":`${city.name.toUpperCase()} SHORTLIST`}</p><h2>{loading?"Loading…":`${visible.length} cafés`}</h2></div>
+          <div><p className="eyebrow">{view==="rated"?"PERSONALLY REVIEWED":view==="saved"?"SAVED PLACES":`${city.name.toUpperCase()} SHORTLIST`}</p><h2>{loading?"Loading…":`${visible.length} cafés`}</h2></div>
           <p>{view==="all"?"Tap a café to see why it made the list.":"Tap to open the full Fika card."}</p>
         </div>
         <div className="cafe-cards">
