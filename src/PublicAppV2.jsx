@@ -430,7 +430,6 @@ function Detail({cafe,review,onClose,city}) {
         touchStartX.current=null;
       }}>
         {activePhoto ? <img key={activePhoto} src={activePhoto} alt={cafe.name}/> : <div className="detail-fallback">{initials(cafe.name)}</div>}
-        <div className="photo-chip left">⌖ {review?.city || city.name}</div>
         {(review?.scene || firstTag(cafe,review)) && <div className="photo-chip right">☀ {review?.scene || firstTag(cafe,review)}</div>}
         {photos.length>1 && <>
           <button className="gallery-arrow gallery-prev" onClick={e=>{e.stopPropagation();prevPhoto()}} aria-label="Previous café photo">‹</button>
