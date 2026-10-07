@@ -421,7 +421,7 @@ function Detail({cafe,review,onClose,city}) {
 
   return <div className="detail-backdrop" onMouseDown={onClose}>
     <section className="editorial-detail" role="dialog" aria-modal="true" aria-label={cafe.name} onMouseDown={e=>e.stopPropagation()}>
-      <div className="detail-topbar"><button autoFocus className="detail-back" onClick={onClose}>← Back</button><span>Worth the Fika</span><ShareCafe cafe={cafe}/></div>
+      <div className="detail-topbar"><button autoFocus className="detail-back" onClick={onClose}>← Back</button><span className="detail-brand"><img src="/icons/fika-icon-192-v4.png" alt=""/>Worth the Fika</span><ShareCafe cafe={cafe}/></div>
       <div className="detail-hero" onTouchStart={e=>{touchStartX.current=e.touches?.[0]?.clientX ?? null}} onTouchEnd={e=>{
         const end=e.changedTouches?.[0]?.clientX;
         if(touchStartX.current==null||end==null||photos.length<2)return;
