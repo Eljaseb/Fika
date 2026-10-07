@@ -334,7 +334,13 @@ function CatalogCard({cafe,review,saved,onSave,onOpen}) {
   const rated = Boolean(review);
   const score = rated ? fika10(review) : null;
   return <article className={`cafe-list-card ${rated ? "is-rated" : ""}`} onClick={()=>onOpen(cafe)} role="button" tabIndex={0} onKeyDown={e=>{if(e.target!==e.currentTarget)return;if(e.key==="Enter"||e.key===" "){e.preventDefault();onOpen(cafe)}}}>
-    <CafeThumb cafe={cafe} review={review}/>
+    <div className="cafe-card-media">
+      <CafeThumb cafe={cafe} review={review}/>
+      <div className="cafe-card-actions">
+        <button className={`bookmark ${saved ? "saved" : ""}`} onClick={(e)=>{e.stopPropagation();onSave(cafe.id)}} aria-label="Save"><Heart filled={saved}/></button>
+        <ShareCafe cafe={cafe}/>
+      </div>
+    </div>
     <div className="cafe-list-copy">
       <div className="cafe-name-row">
         <div>
@@ -350,8 +356,7 @@ function CatalogCard({cafe,review,saved,onSave,onOpen}) {
       </div>
       {!rated && <p className="public-signal">{publicRatingText(cafe)} · {cafe.distanceKm != null ? `≈ ${cafe.distanceKm} km from centre` : cafe.city || ""}</p>}
     </div>
-    <ShareCafe cafe={cafe}/>
-    <button className={`bookmark ${saved ? "saved" : ""}`} onClick={(e)=>{e.stopPropagation();onSave(cafe.id)}} aria-label="Save"><Heart filled={saved}/></button>
+
   </article>;
 }
 

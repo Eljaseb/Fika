@@ -1418,7 +1418,7 @@ button,a{-webkit-tap-highlight-color:transparent}
 
 .hero-mosaic[data-count="0"]{display:none}.hero-mosaic[data-count="1"]{grid-template-columns:1fr}.hero-mosaic[data-count="2"]{grid-template-rows:1fr}.hero-mosaic[data-count="2"] .hero-cafe-1{grid-row:auto}
 
-.cafe-share{position:relative;flex-shrink:0}.share-cafe-button{width:44px;height:44px;display:grid;place-items:center;border:1px solid #d5c7b5;background:#fffaf2;color:#432618;border-radius:50%;cursor:pointer}.share-cafe-button svg{width:23px;height:23px}.cafe-list-card>.cafe-share{position:absolute;right:58px;bottom:14px;z-index:3}.cafe-list-card .cafe-list-copy{padding-bottom:48px}.share-message{position:absolute;right:0;top:100%;background:#432618;color:#fffaf2;border-radius:9px;padding:7px 10px;white-space:nowrap;font-size:12px;z-index:40}.cafe-share input{position:absolute;right:0;top:75px;width:240px;max-width:75vw;padding:10px;background:white;border:1px solid #d5c7b5;z-index:40}.detail-topbar>.cafe-share{margin-left:auto}.share-cafe-button:focus-visible{outline:3px solid #9c7b45;outline-offset:2px}
+.cafe-share{position:relative;flex-shrink:0}.share-cafe-button{width:44px;height:44px;display:grid;place-items:center;border:1px solid #d5c7b5;background:#fffaf2;color:#432618;border-radius:50%;cursor:pointer}.share-cafe-button svg{width:23px;height:23px}.share-message{position:absolute;right:0;top:100%;background:#432618;color:#fffaf2;border-radius:9px;padding:7px 10px;white-space:nowrap;font-size:12px;z-index:40}.cafe-share input{position:absolute;right:0;top:75px;width:240px;max-width:75vw;padding:10px;background:white;border:1px solid #d5c7b5;z-index:40}.detail-topbar>.cafe-share{margin-left:auto}.share-cafe-button:focus-visible{outline:3px solid #9c7b45;outline-offset:2px}
 
 .detail-brand{display:flex;align-items:center;gap:7px}.detail-brand img{width:28px;height:28px;border-radius:50%}
 /* Let the photography lead, with compact navigation and review essentials. */
@@ -1464,3 +1464,14 @@ button,a{-webkit-tap-highlight-color:transparent}
  .detail-topbar>.detail-brand{font-size:14px;gap:5px}
  .detail-topbar .detail-brand img{width:32px;height:32px}
 }
+
+/* Keep card actions together beneath the thumbnail without a spare column or row. */
+.cafe-list-card{grid-template-columns:112px minmax(0,1fr)}
+.cafe-card-media{min-width:0;align-self:center}
+.cafe-card-actions{display:flex;align-items:center;justify-content:center;gap:4px;margin-top:4px}
+.cafe-card-actions .bookmark,.cafe-card-actions .share-cafe-button{width:44px;height:44px;border:0;background:transparent;border-radius:12px}
+.cafe-card-actions .bookmark.saved{background:#f1dfd3}
+.cafe-card-actions .bookmark svg,.cafe-card-actions .share-cafe-button svg{width:19px;height:19px}
+.cafe-card-actions .share-message{right:auto;left:0}
+.cafe-card-actions .cafe-share input{right:auto;left:-44px;top:44px}
+@media(max-width:700px){.cafe-list-card{grid-template-columns:90px minmax(0,1fr)}.cafe-card-actions{gap:2px}}
