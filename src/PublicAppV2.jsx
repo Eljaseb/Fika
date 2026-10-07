@@ -1,4 +1,4 @@
-import {tagLabel,criterionLabel,foodEmoji,tastingMeta} from "./tasting.js";
+import {tagLabel,criterionLabel,foodEmoji,tastingMeta,ratingEmoji,reviewMonth,priceLabel} from "./tasting.js";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import L from "leaflet";
@@ -343,17 +343,9 @@ function categoryHasData(category) {
   return Boolean(category?.type || category?.note || category?.mod || category?.subtype || categoryAverage(category) > 0);
 }
 
-function TasteRow({emoji,label,title,detail,score,onClick,expanded}) {
-  if (!title && !score) return null;
-  return <button type="button" onClick={onClick} aria-expanded={expanded} className="taste-highlight tasting-trigger">
-    <div className="taste-icon">{emoji}</div>
-    <div className="taste-copy">
-      <span className="taste-label">{label}</span>
-      <strong>{title || label}</strong>
-      {detail && <p>{detail}</p>}
-    </div>
-    <div className="taste-score"><b>{score || "–"}</b><small>/10</small></div>
-  </button>;
+function EmojiScore({value,emoji="⭐",max=5}){
+  const n=Math.max(0,Math.min(max,Number(value)||0));
+  return <span className="emoji-score" style={{background:`linear-gradient(to right,#a9bd8c ${n/max*100}%,#e8dfd0 ${n/max*100}%)`}} role="img" aria-label={n?`${n} out of ${max}`:"Not rated"}>{Array.from({length:5},(_,i)=><span className="emoji-score-cell" key={i}><span className="emoji-score-empty">{emoji}</span><span className="emoji-score-fill" style={{clipPath:`inset(0 ${100-Math.max(0,Math.min(1,n/max*5-i))*100}% 0 0)`}}>{emoji}</span></span>)}</span>;
 }
 
 function CafeLocationMap({cafe,review,city}) {
@@ -434,6 +426,7 @@ function Detail({cafe,review,onClose,city}) {
 
       <div className="detail-sheet">
         <div className="detail-heading">
+          {reviewMonth(review?.visitedOn)&&<p className="review-date">🗓️ Reviewed {reviewMonth(review.visitedOn)}</p>}
           <p className="detail-kicker">{cafe.rank ? `${city.name} 50 · #${cafe.rank}` : "Worth the Fika review"}</p>
           <h2>{cafe.name} <span>{review?.country==="Sweden" || city.country==="Sweden" ? "🇸🇪" : "🇩🇰"}</span></h2>
           {review ? <div className="detail-badges">
@@ -444,23 +437,18 @@ function Detail({cafe,review,onClose,city}) {
 
         {review ? <>
           <div className="rating-summary">
-            <div className="rating-summary-item overall"><span>Overall</span><strong>{score}</strong><small>/10</small></div>
-            {coffeeScore && <button className="rating-summary-item tasting-trigger" aria-expanded={tasting==="drink"} onClick={()=>setTasting(tasting==="drink"?null:"drink")}><span>{foodEmoji(review.drink?.type)} Drink ↗</span><strong>{coffeeScore}</strong><small>/10</small></button>}
-            {pastryScore && <button className="rating-summary-item tasting-trigger" aria-expanded={tasting==="pastry"} onClick={()=>setTasting(tasting==="pastry"?null:"pastry")}><span>🥐 Pastry ↗</span><strong>{pastryScore}</strong><small>/10</small></button>}
-          </div>
-          <div className="taste-section">
-            <p className="section-label">TASTING HIGHLIGHTS</p>
-            {categoryHasData(review.drink) && <TasteRow onClick={()=>setTasting(tasting==="drink"?null:"drink")} expanded={tasting==="drink"} emoji={foodEmoji(review.drink?.type)} label="Drink · tap for details" title={review.drink?.type || "Coffee"} detail={review.drink?.note || review.drink?.mod} score={coffeeScore}/>}
-            {categoryHasData(review.pastry) && <TasteRow onClick={()=>setTasting(tasting==="pastry"?null:"pastry")} expanded={tasting==="pastry"} emoji={foodEmoji(review.pastry?.type,"pastry")} label="Pastry · tap for details" title={review.pastry?.type || review.pastry?.subtype || "Pastry"} detail={review.pastry?.note || review.pastry?.subtype} score={pastryScore}/>}
+            <div className="rating-summary-item overall"><span>Overall</span><EmojiScore value={score} max={10} emoji="⭐"/></div>
+            {coffeeScore && <button className="rating-summary-item tasting-trigger" aria-expanded={tasting==="drink"} onClick={()=>setTasting(tasting==="drink"?null:"drink")}><span>{foodEmoji(review.drink?.type)} Drink ↗</span><EmojiScore value={coffeeScore} max={10} emoji={foodEmoji(review.drink?.type)}/></button>}
+            {pastryScore && <button className="rating-summary-item tasting-trigger" aria-expanded={tasting==="pastry"} onClick={()=>setTasting(tasting==="pastry"?null:"pastry")}><span>🥐 Pastry ↗</span><EmojiScore value={pastryScore} max={10} emoji={foodEmoji(review.pastry?.type,"pastry")}/></button>}
           </div>
           {tasting&&<section ref={tastingRef} className="tasting-breakdown" aria-label="Detailed tasting ratings">
             <h3>{foodEmoji(review[tasting]?.type,tasting)} {review[tasting]?.type|| (tasting==="drink"?"Drink":"Pastry")}</h3>
             {review[tasting]?.photo&&<img className="tasting-photo" src={review[tasting].photo} alt={review[tasting].type||tasting}/>}
             <p>{tastingMeta(review[tasting])}</p>
-            {Number(review[tasting]?.price)>0&&<p>Price: {review[tasting].price} {review.country==="Sweden"?"SEK":review.country==="Denmark"?"DKK":"(local currency)"}</p>}
+            <p>🏷️ {priceLabel(review[tasting]?.price,review.country)}{reviewMonth(review.visitedOn)?" · "+reviewMonth(review.visitedOn):""}</p>
             {review[tasting]?.note&&<p className="tasting-note">{review[tasting].note}</p>}
-            <p>Individual criteria are scored out of 5.</p>
-            <div className="tasting-criteria">{Object.entries(review[tasting]?.ratings||{}).map(([label,value])=><div key={label}><span>{criterionLabel(label)}</span><meter min="0" max="5" value={Number(value)||0}/><b>{Number(value)>0?Number(value).toFixed(1)+" / 5":"Not rated"}</b></div>)}</div>
+            <p>Each scale fills up to five emojis.</p>
+            <div className="tasting-criteria">{Object.entries(review[tasting]?.ratings||{}).map(([label,value])=><div key={label}><span>{criterionLabel(label)}</span><EmojiScore value={value} emoji={ratingEmoji(label)}/></div>)}</div>
             {!Object.keys(review[tasting]?.ratings||{}).length&&<p>No individual ratings added yet.</p>}
           </section>}
           {(review.reason || review.take) && <p className="detail-verdict">{review.reason || review.take}</p>}

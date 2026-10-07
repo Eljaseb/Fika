@@ -1,4 +1,4 @@
-import {DRINKS,PASTRIES,TAGS,tagLabel,criterionLabel,foodEmoji,isCoffee,tastingMeta} from "./tasting.js";
+import {DRINKS,PASTRIES,TAGS,tagLabel,criterionLabel,foodEmoji,isCoffee,tastingMeta,ratingEmoji,reviewMonth,priceLabel} from "./tasting.js";
 
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import "./creator-v2.css";
@@ -62,6 +62,12 @@ function wrap(ctx,text,maxWidth,maxLines){
   if(lines.length>maxLines){lines.length=maxLines;lines[maxLines-1]+="…"}
   return lines;
 }
+function drawEmojiBar(ctx,value,emoji,x,y,width,height){
+  const amount=Math.max(0,Math.min(5,Number(value)||0));
+  const cell=width/5;ctx.save();ctx.fillStyle="#e8dfd0";ctx.beginPath();ctx.roundRect(x,y,width,height,height/2);ctx.fill();if(amount){ctx.save();ctx.beginPath();ctx.roundRect(x,y,width,height,height/2);ctx.clip();ctx.fillStyle="#a9bd8c";ctx.fillRect(x,y,width*amount/5,height);ctx.restore()}ctx.font=`${height*.78}px "Apple Color Emoji","Segoe UI Emoji",Arial`;ctx.textAlign="center";ctx.textBaseline="middle";
+  for(let i=0;i<5;i++){const left=x+i*cell;ctx.globalAlpha=.16;ctx.fillText(emoji,left+cell/2,y+height/2,cell*.9);ctx.globalAlpha=1;const fill=Math.max(0,Math.min(1,amount-i));if(fill){ctx.save();ctx.beginPath();ctx.rect(left,y,cell*fill,height);ctx.clip();ctx.fillText(emoji,left+cell/2,y+height/2,cell*.9);ctx.restore()}}
+  ctx.restore();
+}
 async function renderCard(cafe,format,raw=false){
   const story=format==="story",W=1080,H=story?1920:1350,p=58,heroH=Math.round(H*(story?.45:.43));
   const canvas=document.createElement("canvas");canvas.width=W;canvas.height=H;
@@ -86,17 +92,21 @@ async function renderCard(cafe,format,raw=false){
     let y=heroH+50*scale;const text=(value,font,color,x,y,max)=>{ctx.font=font;ctx.fillStyle=color;if(paint)ctx.fillText(value,x,y,max)};
     text("WORTH THE FIKA",`bold ${24*scale}px Arial`,"#9c683d",p,y,W-p*2);y+= (story?94:84)*scale;
     ctx.font=`bold ${(story?100:88)*scale}px Georgia`;
-    const title=wrap(ctx,cafe.itemCategory?foodEmoji(cafe.name,cafe.cardKind)+" "+cafe.name:cafe.name,W-p*2,2);
+    const titleText=cafe.itemCategory?foodEmoji(cafe.name,cafe.cardKind)+" "+cafe.name:cafe.name;
+    let titleSize=(story?100:88)*scale;
+    while(ctx.measureText(titleText).width>(W-p*2)*1.75&&titleSize>48*scale){titleSize-=4*scale;ctx.font=`bold ${titleSize}px Georgia`}
+    const title=wrap(ctx,titleText,W-p*2,3);
     for(const line of title){text(line,ctx.font,"#2c211b",p,y,W-p*2);y+=(story?104:92)*scale}
     y-=25*scale;
     if(cafe.itemCategory){
       const item=cafe.itemCategory;
       text(cafe.cafeName,`bold ${32*scale}px Arial`,"#9c683d",p,y,W-p*2);y+=40*scale;
+      text("🏷️ "+priceLabel(item.price,cafe.country),`bold ${30*scale}px Arial`,"#9c683d",p,y,W-p*2);y+=40*scale;
       const meta=tastingMeta(item);if(meta){text(meta,`${26*scale}px Arial`,"#72604e",p,y,W-p*2);y+=40*scale}
-      text("TASTING DETAILS · OUT OF 5",`bold ${24*scale}px Arial`,"#9c683d",p,y,W-p*2);y+=18*scale;
+      text("TASTING DETAILS",`bold ${24*scale}px Arial`,"#9c683d",p,y,W-p*2);y+=18*scale;
       for(const [label,value] of Object.entries(item.ratings||{})){
-        y+=48*scale;text(criterionLabel(label),`bold ${32*scale}px Arial`,"#432618",p,y,W-p*2-180);
-        ctx.textAlign="right";text(Number(value)>0?Number(value).toFixed(1)+" / 5":"—",`bold ${34*scale}px Georgia`,"#b3553b",W-p,y,160);ctx.textAlign="left";
+        y+=48*scale;text(criterionLabel(label),`bold ${32*scale}px Arial`,"#432618",p,y,W-p*2-360*scale);
+        if(paint)drawEmojiBar(ctx,value,ratingEmoji(label),W-p-330*scale,y-34*scale,330*scale,44*scale);
       }
       if(item.note){y+=50*scale;ctx.font=`bold ${32*scale}px Georgia`;for(const line of wrap(ctx,item.note,W-p*2,story?4:3)){text(line,ctx.font,"#432618",p,y,W-p*2);y+=40*scale}}
       return y-heroH;
@@ -109,10 +119,9 @@ async function renderCard(cafe,format,raw=false){
     for(const [label,category] of [["COFFEE",cafe.drink],["PASTRY",cafe.pastry]]){
       if(!category?.type)continue;
       y+=(story?42:36)*scale;
-      text(foodEmoji(category.type,label==="PASTRY"?"pastry":"drink")+" "+category.type,`bold ${(story?46:40)*scale}px Georgia`,"#2c211b",p,y,W-p*2-160);
-      ctx.textAlign="right";text(category10(category),`bold ${48*scale}px Georgia`,"#b3553b",W-p,y,130);ctx.textAlign="left";
-      const note=category.note||category.mod||category.subtype;
-      if(note){y+=34*scale;text(wrap(Object.assign(ctx,{font:`${28*scale}px Arial`}),note,W-p*2,1)[0],ctx.font,"#72604e",p,y,W-p*2)}
+      text(foodEmoji(category.type,label==="PASTRY"?"pastry":"drink")+" "+category.type,`bold ${(story?46:40)*scale}px Georgia`,"#2c211b",p,y,W-p*2-280*scale);
+      if(paint)drawEmojiBar(ctx,Number(category10(category))/2,foodEmoji(category.type,label==="PASTRY"?"pastry":"drink"),W-p-260*scale,y-34*scale,260*scale,44*scale);
+      y+=34*scale;text("🏷️ "+priceLabel(category.price,cafe.country),`bold ${26*scale}px Arial`,"#72604e",p,y,W-p*2);
       y+=24*scale;if(paint){ctx.strokeStyle="#ddcdb7";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p,y);ctx.lineTo(W-p,y);ctx.stroke()}
     }
     const verdict=cafe.reason||cafe.take;
@@ -121,7 +130,7 @@ async function renderCard(cafe,format,raw=false){
   };
   let scale=story?1.22:1;for(let i=0;i<6;i++){const used=drawBody(scale,false);if(used<=available)break;scale*=available/used*.98}
   drawBody(scale,true);
-  ctx.strokeStyle="#c9b492";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p,H-100);ctx.lineTo(W-p,H-100);ctx.stroke();ctx.fillStyle="#80603c";ctx.font="bold 24px Arial";ctx.fillText("FIKA REVIEWS",p,H-52);ctx.textAlign="right";ctx.fillText("@WorthTheFika",W-p,H-52);ctx.textAlign="left";
+  ctx.strokeStyle="#c9b492";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p,H-100);ctx.lineTo(W-p,H-100);ctx.stroke();ctx.fillStyle="#80603c";ctx.font="bold 24px Arial";ctx.fillText(reviewMonth(cafe.visitedOn)?"FIKA · "+reviewMonth(cafe.visitedOn):"FIKA REVIEWS",p,H-52);ctx.textAlign="right";ctx.fillText("@WorthTheFika",W-p,H-52);ctx.textAlign="left";
   if(raw)return canvas;
   const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",.95));if(!blob)throw new Error("card_failed");return blob;
 }
