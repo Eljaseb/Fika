@@ -315,10 +315,25 @@ function CafeThumb({cafe,review}) {
   </div>;
 }
 
+function cafeShareUrl(cafe){
+  const url=new URL("/",window.location.origin);
+  const key=Object.values(CITY_CONFIG).find(c=>normalize(c.name)===normalize(cafe.city))?.key||"copenhagen";
+  url.searchParams.set("city",key);url.searchParams.set("cafe",String(cafe.id));return url.href;
+}
+function ShareCafe({cafe}){
+  const [message,setMessage]=useState("");const [manual,setManual]=useState(false);
+  async function share(e){
+    e.stopPropagation();setMessage("");setManual(false);const url=cafeShareUrl(cafe);
+    if(navigator.share){try{await navigator.share({title:cafe.name+" · Worth the Fika",text:"Is "+cafe.name+" worth the fika?",url});return}catch(error){if(error.name==="AbortError")return}}
+    try{await navigator.clipboard.writeText(url);setMessage("Link copied")}catch{setMessage("Copy this café link");setManual(true)}
+  }
+  return <div className="cafe-share" onClick={e=>e.stopPropagation()} onKeyDown={e=>e.stopPropagation()}><button type="button" className="share-cafe-button" onClick={share} aria-label={"Share "+cafe.name} title="Share café"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M12 16V3m-4 4 4-4 4 4M7 10H4v11h16V10h-3" strokeLinecap="round" strokeLinejoin="round"/></svg></button>{message&&<span className="share-message" role="status">{message}</span>}{manual&&<input aria-label="Café share link" readOnly value={cafeShareUrl(cafe)} onFocus={e=>e.target.select()}/>}</div>;
+}
+
 function CatalogCard({cafe,review,saved,onSave,onOpen}) {
   const rated = Boolean(review);
   const score = rated ? fika10(review) : null;
-  return <article className={`cafe-list-card ${rated ? "is-rated" : ""}`} onClick={()=>onOpen(cafe)} role="button" tabIndex={0} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();onOpen(cafe)}}}>
+  return <article className={`cafe-list-card ${rated ? "is-rated" : ""}`} onClick={()=>onOpen(cafe)} role="button" tabIndex={0} onKeyDown={e=>{if(e.target!==e.currentTarget)return;if(e.key==="Enter"||e.key===" "){e.preventDefault();onOpen(cafe)}}}>
     <CafeThumb cafe={cafe} review={review}/>
     <div className="cafe-list-copy">
       <div className="cafe-name-row">
@@ -335,6 +350,7 @@ function CatalogCard({cafe,review,saved,onSave,onOpen}) {
       </div>
       {!rated && <p className="public-signal">{publicRatingText(cafe)} · {cafe.distanceKm != null ? `≈ ${cafe.distanceKm} km from centre` : cafe.city || ""}</p>}
     </div>
+    <ShareCafe cafe={cafe}/>
     <button className={`bookmark ${saved ? "saved" : ""}`} onClick={(e)=>{e.stopPropagation();onSave(cafe.id)}} aria-label="Save"><Heart filled={saved}/></button>
   </article>;
 }
@@ -405,7 +421,7 @@ function Detail({cafe,review,onClose,city}) {
 
   return <div className="detail-backdrop" onMouseDown={onClose}>
     <section className="editorial-detail" role="dialog" aria-modal="true" aria-label={cafe.name} onMouseDown={e=>e.stopPropagation()}>
-      <div className="detail-topbar"><button autoFocus className="detail-back" onClick={onClose}>← Back</button><span>Worth the Fika</span></div>
+      <div className="detail-topbar"><button autoFocus className="detail-back" onClick={onClose}>← Back</button><span>Worth the Fika</span><ShareCafe cafe={cafe}/></div>
       <div className="detail-hero" onTouchStart={e=>{touchStartX.current=e.touches?.[0]?.clientX ?? null}} onTouchEnd={e=>{
         const end=e.changedTouches?.[0]?.clientX;
         if(touchStartX.current==null||end==null||photos.length<2)return;
@@ -471,6 +487,8 @@ function Detail({cafe,review,onClose,city}) {
 
 export default function PublicAppV2() {
   const [cityKey,setCityKey] = useState(()=>{
+    const linkedCity=new URLSearchParams(window.location.search).get("city");
+    if(CITY_CONFIG[linkedCity])return linkedCity;
     const saved = localStorage.getItem(CITY_KEY);
     return CITY_CONFIG[saved] ? saved : "copenhagen";
   });
@@ -555,6 +573,16 @@ export default function PublicAppV2() {
     if(q) list=list.filter(x=>normalize([x.catalog.name,x.catalog.address,x.catalog.kind,x.catalog.why,x.review?.scene,...(x.review?.bestFor||[])].join(" ")).includes(q));
     return list;
   },[view,rated,enriched,customRated,saved,query,cityKey]);
+
+  const sharedLinkHandled=useRef(false);
+  useEffect(()=>{
+    if(loading||sharedLinkHandled.current)return;
+    const id=new URLSearchParams(window.location.search).get("cafe");
+    if(!id){sharedLinkHandled.current=true;return}
+    const found=[...enriched,...customRated].find(x=>String(x.catalog.id)===id);
+    if(found){setSelected(found.catalog);sharedLinkHandled.current=true}
+  },[loading,enriched,customRated]);
+  function closeCafe(){setSelected(null);const url=new URL(window.location.href);url.searchParams.delete("cafe");window.history.replaceState(null,"",url)}
 
   const selectedReview = selected ? (matchReview(selected,reviews) || customRated.find(x=>x.catalog.id===selected.id)?.review) : null;
 
@@ -645,7 +673,7 @@ export default function PublicAppV2() {
       </section>
     </main>
 
-    <Detail cafe={selected} review={selectedReview} onClose={()=>setSelected(null)} city={city}/>
+    <Detail cafe={selected} review={selectedReview} onClose={closeCafe} city={city}/>
     <AboutModal open={aboutOpen} onClose={()=>setAboutOpen(false)}/>
     <ContactModal open={contactOpen} onClose={()=>setContactOpen(false)} city={city}/>
   </div>;
