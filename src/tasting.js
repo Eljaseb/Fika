@@ -6,7 +6,7 @@ export function tagLabel(tag){if(/\p{Extended_Pictographic}/u.test(tag))return t
 export function criterionLabel(label){const map={'Taste':'🤤','Flavour':'😋','Aroma':'🌸','Body':'☕️','Temperature':'🌡️','Balance':'⚖️','Texture':'🥐','Freshness':'🌿','Filling':'🍯','Presentation':'✨','Atmosphere':'🛋️','Service':'🫶','Value':'💰'};return (map[label]||'⭐')+' '+label}
 export function foodEmoji(type,kind='drink'){const t=(type||'').toLowerCase();if(kind==='drink')return /matcha|hojicha|tea/.test(t)?'🍵':/chocolate|mocha/.test(t)?'🍫':/juice|lemon/.test(t)?'🍋':'☕';return /cake|tart/.test(t)?'🍰':/cookie/.test(t)?'🍪':/chocolate|brownie/.test(t)?'🍫':/doughnut/.test(t)?'🍩':'🥐'}
 export function isCoffee(type){return Boolean(type)&&!/(matcha|hojicha|^tea$|iced tea|chocolate|golden|juice|lemonade|^chai latte$)/i.test(type)}
-export function tastingMeta(c){return [c?.shots==='1'?'Single shot':c?.shots==='2'?'Double shot':c?.shots==='3'?'Triple shot':null,c?.temp,c?.milk,c?.mod,c?.subtype].filter(Boolean).join(' · ')}
+export function tastingMeta(c){return [c?.shots==='1'?'Single shot':c?.shots==='2'?'Double shot':c?.shots==='3'?'Triple shot':null,c?.temp,c?.milk&&c.milk.trim().toLowerCase()!=="no milk"?c.milk:null,c?.subtype].filter(Boolean).join(' · ')}
 export function ratingEmoji(label){return criterionLabel(label).split(' ')[0]}
 export function reviewMonth(value){if(!/^\d{4}-\d{2}-\d{2}$/.test(value||''))return '';const d=new Date(value+'T12:00:00Z');return Number.isNaN(d.getTime())?'':new Intl.DateTimeFormat('en',{month:'short',year:'numeric',timeZone:'UTC'}).format(d)}
 export function priceLabel(value,country){const n=Number(value);return n>0?n.toLocaleString('en',{maximumFractionDigits:2})+(country==='Sweden'?' SEK':country==='Denmark'?' DKK':''):'Price not added'}
