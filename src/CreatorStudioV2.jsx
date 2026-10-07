@@ -86,7 +86,7 @@ async function renderCard(cafe,format,raw=false){
     let y=heroH+50*scale;const text=(value,font,color,x,y,max)=>{ctx.font=font;ctx.fillStyle=color;if(paint)ctx.fillText(value,x,y,max)};
     text("WORTH THE FIKA",`bold ${24*scale}px Arial`,"#9c683d",p,y,W-p*2);y+= (story?94:84)*scale;
     ctx.font=`bold ${(story?100:88)*scale}px Georgia`;
-    const title=wrap(ctx,cafe.name,W-p*2,2);
+    const title=wrap(ctx,cafe.itemCategory?foodEmoji(cafe.name,cafe.cardKind)+" "+cafe.name:cafe.name,W-p*2,2);
     for(const line of title){text(line,ctx.font,"#2c211b",p,y,W-p*2);y+=(story?104:92)*scale}
     y-=25*scale;
     if(cafe.itemCategory){
@@ -212,7 +212,7 @@ export default function CreatorStudioV2(){
   const cardCafe=useMemo(()=>{
     if(!selected||cardKind==="cafe")return selected;
     const item=selected[cardKind]||{};
-    return {...selected,name:foodEmoji(item.type,cardKind)+" "+(item.type||cardKind),cafeName:selected.name,cardKind,itemCategory:item,imgs:item.photo?[item.photo]:[],cardZoom:item.cardZoom||1,cardX:item.cardX||0,cardY:item.cardY||0,cardRotation:item.cardRotation||0};
+    return {...selected,name:item.type||cardKind,cafeName:selected.name,cardKind,itemCategory:item,imgs:item.photo?[item.photo]:[],cardZoom:item.cardZoom||1,cardX:item.cardX||0,cardY:item.cardY||0,cardRotation:item.cardRotation||0};
   },[selected,cardKind]);
   useEffect(()=>{let cancelled=false;sessionStorage.removeItem("wtfika:admin");fetch("/api/admin-check",{credentials:"same-origin",cache:"no-store"}).then(r=>{if(!cancelled)setReady(r.ok)}).catch(()=>{}).finally(()=>{if(!cancelled)setCheckingSession(false)});return()=>{cancelled=true}},[]);
 
