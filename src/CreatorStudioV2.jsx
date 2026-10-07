@@ -1,8 +1,9 @@
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import "./creator-v2.css";
+import {gestureTransform} from "./photo-gesture.js";
 
-const API = "/api/cafes";
+const API = "/api/admin-reviews";
 const DRINK_CRITERIA = ["Taste","Aroma","Body / texture","Temperature","Balance"];
 const PASTRY_CRITERIA = ["Flavour","Texture","Freshness","Filling","Presentation"];
 
@@ -47,159 +48,114 @@ function coverPlacement(bitmap,targetW,targetH,zoom=1,xShift=0,yShift=0){
   return {dx,dy,dw,dh};
 }
 
+const bitmapCache=new Map();
 async function loadBitmap(url){
   if(!url)return null;
-  try{const r=await fetch(url);if(!r.ok)return null;return await createImageBitmap(await r.blob())}catch{return null}
+  if(!bitmapCache.has(url))bitmapCache.set(url,fetch(url).then(r=>{if(!r.ok)throw new Error();return r.blob()}).then(createImageBitmap).catch(()=>{bitmapCache.delete(url);return null}));
+  return bitmapCache.get(url);
 }
-
 function wrap(ctx,text,maxWidth,maxLines){
-  const words=String(text||"").split(/\s+/).filter(Boolean);const lines=[];let line="";
-  for(const word of words){const next=line?line+" "+word:word;if(ctx.measureText(next).width<=maxWidth||!line)line=next;else{lines.push(line);line=word;if(lines.length>=maxLines)break}}
-  if(line&&lines.length<maxLines)lines.push(line);
+  const words=String(text||"").split(/\s+/).filter(Boolean),lines=[];let line="";
+  for(const word of words){const next=line?line+" "+word:word;if(ctx.measureText(next).width<=maxWidth||!line)line=next;else{lines.push(line);line=word}}
+  if(line)lines.push(line);
+  if(lines.length>maxLines){lines.length=maxLines;lines[maxLines-1]+="…"}
   return lines;
 }
-
-async function renderCard(cafe,format){
-  const isStory=format==="story";
-  const W=1080,H=isStory?1920:1350;
-  const p=62;
-  const heroH=Math.round(H*(isStory?.47:.51));
-  const canvas=document.createElement("canvas");
-  canvas.width=W;canvas.height=H;
-  let ctx=canvas.getContext("2d");
-
-  ctx.fillStyle="#fbf5e9";
-  ctx.fillRect(0,0,W,H);
-
-  const cover=Array.isArray(cafe.imgs)?cafe.imgs[0]:null;
-  const bitmap=await loadBitmap(cover);
+async function renderCard(cafe,format,raw=false){
+  const story=format==="story",W=1080,H=story?1920:1350,p=58,heroH=Math.round(H*(story?.45:.43));
+  const canvas=document.createElement("canvas");canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext("2d");ctx.fillStyle="#fbf5e9";ctx.fillRect(0,0,W,H);
+  const bitmap=await loadBitmap(cafe.imgs?.[0]);
+  ctx.save();ctx.beginPath();ctx.rect(0,0,W,heroH);ctx.clip();
+  ctx.fillStyle="#adad8c";ctx.fillRect(0,0,W,heroH);
   if(bitmap){
-    const place=coverPlacement(bitmap,W,heroH,Number(cafe.cardZoom)||1,Number(cafe.cardX)||0,Number(cafe.cardY)||0);
-    ctx.save();ctx.beginPath();ctx.rect(0,0,W,heroH);ctx.clip();
-    ctx.fillStyle="#d5c7b5";ctx.fillRect(0,0,W,heroH);
-    ctx.drawImage(bitmap,place.dx,place.dy,place.dw,place.dh);
-    const shade=ctx.createLinearGradient(0,0,0,heroH);
-    shade.addColorStop(0,"rgba(28,21,17,.06)");
-    shade.addColorStop(.7,"rgba(28,21,17,0)");
-    shade.addColorStop(1,"rgba(28,21,17,.22)");
-    ctx.fillStyle=shade;ctx.fillRect(0,0,W,heroH);ctx.restore();
-  }else{
-    const g=ctx.createLinearGradient(0,0,W,heroH);g.addColorStop(0,"#d9b693");g.addColorStop(1,"#879477");
-    ctx.fillStyle=g;ctx.fillRect(0,0,W,heroH);
-    ctx.fillStyle="rgba(44,32,25,.65)";ctx.font="italic 700 185px Georgia";ctx.textAlign="center";
-    ctx.fillText(initials(cafe.name),W/2,heroH/2);ctx.textAlign="left";
-  }
-
-  function pill(x,y,text,alignRight=false){
-    ctx.font="700 24px Arial";
-    const width=ctx.measureText(text).width+38;
-    const left=alignRight?x-width:x;
-    ctx.fillStyle="rgba(35,29,25,.76)";
-    ctx.beginPath();ctx.roundRect(left,y,width,55,28);ctx.fill();
-    ctx.fillStyle="#fffaf2";ctx.fillText(text,left+19,y+36);
-    return width;
-  }
-
-  pill(p,42,"⌖ "+([cafe.city,cafe.country].filter(Boolean).join(", ")||"Copenhagen"));
-  if(cafe.scene) pill(W-p,42,"☀ "+cafe.scene,true);
-
-  const sc=score10(cafe);
-  const badgeR=isStory?105:95;
-  const bx=W-p-badgeR,by=heroH-badgeR-24;
-  ctx.fillStyle="#fffaf2";ctx.beginPath();ctx.arc(bx,by,badgeR,0,Math.PI*2);ctx.fill();
-  ctx.strokeStyle="#c39a4a";ctx.lineWidth=5;ctx.stroke();
-  ctx.strokeStyle="#e5c987";ctx.lineWidth=2;ctx.beginPath();ctx.arc(bx,by,badgeR-10,0,Math.PI*2);ctx.stroke();
-  ctx.fillStyle="#2c211b";ctx.textAlign="center";ctx.font=`600 ${isStory?84:74}px Georgia`;ctx.fillText(sc,bx,by+18);
-  ctx.fillStyle="#a27c3d";ctx.font="800 17px Arial";ctx.fillText("FIKA SCORE",bx,by+54);ctx.textAlign="left";
-
-  const heroCtx=ctx;
-  const paper=document.createElement("canvas");paper.width=W;paper.height=1800;ctx=paper.getContext("2d");
-  let y=70;
-  ctx.fillStyle="#9b7a43";ctx.font="800 18px Arial";
-  ctx.fillText("WORTH THE FIKA",p,y);y+=62;
-
-  ctx.fillStyle="#2b211c";ctx.font=`600 ${isStory?78:70}px Georgia`;
-  const titleLines=wrap(ctx,cafe.name,W-p*2,isStory?2:2);
-  for(const line of titleLines){ctx.fillText(line,p,y,W-p*2);y+=isStory?86:76}
-  y+=16;
-
-  if(score(cafe)>=80){
-    ctx.font="800 22px Arial";
-    const text="✓  WORTH THE TRIP";
-    const w=ctx.measureText(text).width+38;
-    ctx.fillStyle="#5d744f";ctx.beginPath();ctx.roundRect(p,y,w,54,27);ctx.fill();
-    ctx.fillStyle="#fff";ctx.fillText(text,p+19,y+35);y+=82;
-  }
-
-  const tags=(cafe.bestFor||[]).slice(0,3);
-  if(tags.length){
-    let tx=p;
-    ctx.font="700 18px Arial";
-    for(const tag of tags){
-      const w=ctx.measureText(tag).width+30;
-      if(tx+w>W-p){break}
-      ctx.fillStyle="#eee5d7";ctx.beginPath();ctx.roundRect(tx,y,w,43,22);ctx.fill();
-      ctx.fillStyle="#66594e";ctx.fillText(tag,tx+15,y+28);tx+=w+10;
+    const place=coverPlacement(bitmap,W,heroH,cafe.cardZoom,cafe.cardX,cafe.cardY);
+    ctx.translate(place.dx+place.dw/2,place.dy+place.dh/2);ctx.rotate((Number(cafe.cardRotation)||0)*Math.PI/180);ctx.drawImage(bitmap,-place.dw/2,-place.dh/2,place.dw,place.dh);
+  }else{const g=ctx.createLinearGradient(0,0,W,heroH);g.addColorStop(0,"#d9b693");g.addColorStop(1,"#879477");ctx.fillStyle=g;ctx.fillRect(0,0,W,heroH);ctx.fillStyle="#432618";ctx.font="italic bold 190px Georgia";ctx.textAlign="center";ctx.fillText(initials(cafe.name),W/2,heroH*.55)}
+  ctx.restore();ctx.textAlign="left";
+  const shade=ctx.createLinearGradient(0,0,0,heroH);shade.addColorStop(0,"#211c1960");shade.addColorStop(.4,"#211c1900");shade.addColorStop(1,"#211c1930");ctx.fillStyle=shade;ctx.fillRect(0,0,W,heroH);
+  function pill(text,x,y,bg,fg,size=24,max=500){ctx.font=`bold ${size}px Arial`;const label=wrap(ctx,text,max-36,1)[0]||"",width=Math.min(max,ctx.measureText(label).width+36);ctx.fillStyle=bg;ctx.beginPath();ctx.roundRect(x,y,width,48,24);ctx.fill();ctx.fillStyle=fg;ctx.fillText(label,x+18,y+32,width-36);return width}
+  pill([cafe.city,cafe.country].filter(Boolean).join(", "),p,35,"#211c19bb","#fffaf2",24,560);
+  const r=104,bx=W-p-r,by=heroH-r-26;
+  ctx.fillStyle="#fffaf2";ctx.beginPath();ctx.arc(bx,by,r,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#bc914d";ctx.lineWidth=6;ctx.stroke();
+  ctx.textAlign="center";ctx.fillStyle="#432618";ctx.font="bold 84px Georgia";ctx.fillText(score10(cafe),bx,by+15);ctx.font="bold 20px Arial";ctx.fillText("FIKA SCORE",bx,by+55);ctx.textAlign="left";
+  const bottom=H-118,available=bottom-heroH-36;
+  // Fit typography at full card width; never shrink the whole text block into the centre.
+  const drawBody=(scale,paint)=>{
+    let y=heroH+50*scale;const text=(value,font,color,x,y,max)=>{ctx.font=font;ctx.fillStyle=color;if(paint)ctx.fillText(value,x,y,max)};
+    text("WORTH THE FIKA",`bold ${24*scale}px Arial`,"#9c683d",p,y,W-p*2);y+= (story?94:84)*scale;
+    ctx.font=`bold ${(story?100:88)*scale}px Georgia`;
+    const title=wrap(ctx,cafe.name,W-p*2,2);
+    for(const line of title){text(line,ctx.font,"#2c211b",p,y,W-p*2);y+=(story?104:92)*scale}
+    y-=25*scale;
+    if(score(cafe)>=80){if(paint)pill("WORTH THE TRIP",p,y,"#5d744f","white",22*scale,320);y+=65*scale}
+    const tags=(cafe.bestFor||[]).slice(0,3).join("  ·  ");
+    if(tags){y+=22*scale;text(tags,`bold ${25*scale}px Arial`,"#80634c",p,y,W-p*2);y+=26*scale}
+    y+=22*scale;
+    if(cafe.drink?.type||cafe.pastry?.type){text("THE TASTING",`bold ${23*scale}px Arial`,"#9c683d",p,y,W-p*2);y+=22*scale}
+    for(const [label,category] of [["COFFEE",cafe.drink],["PASTRY",cafe.pastry]]){
+      if(!category?.type)continue;
+      y+=(story?42:36)*scale;
+      text(category.type,`bold ${(story?46:40)*scale}px Georgia`,"#2c211b",p,y,W-p*2-160);
+      ctx.textAlign="right";text(category10(category),`bold ${48*scale}px Georgia`,"#b3553b",W-p,y,130);ctx.textAlign="left";
+      const note=category.note||category.mod||category.subtype;
+      if(note){y+=34*scale;text(wrap(Object.assign(ctx,{font:`${28*scale}px Arial`}),note,W-p*2,1)[0],ctx.font,"#72604e",p,y,W-p*2)}
+      y+=24*scale;if(paint){ctx.strokeStyle="#ddcdb7";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p,y);ctx.lineTo(W-p,y);ctx.stroke()}
     }
-    y+=72;
-  }
-
-  ctx.fillStyle="#a88852";ctx.font="800 18px Arial";ctx.fillText("TASTING HIGHLIGHTS",p,y);
-  ctx.strokeStyle="#e2d5c4";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p+245,y-5);ctx.lineTo(W-p,y-5);ctx.stroke();
-  y+=45;
-
-  function tastingRow(emoji,title,detail,rating){
-    if(!title)return;
-    ctx.fillStyle="#f0e4d5";ctx.beginPath();ctx.arc(p+26,y+22,26,0,Math.PI*2);ctx.fill();
-    ctx.font="26px Arial";ctx.fillStyle="#2d231e";ctx.fillText(emoji,p+11,y+31);
-    ctx.font="600 29px Georgia";ctx.fillText(title,p+70,y+23,W-p*2-175);
-    if(detail){
-      ctx.font="400 18px Arial";ctx.fillStyle="#7d7168";
-      const clean=String(detail).slice(0,72);
-      ctx.fillText(clean,p+70,y+50,W-p*2-175);
-    }
-    ctx.textAlign="right";ctx.fillStyle="#b5573d";ctx.font="700 34px Georgia";ctx.fillText(rating,W-p,y+30);ctx.textAlign="left";
-    ctx.strokeStyle="#ece1d4";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(p,y+71);ctx.lineTo(W-p,y+71);ctx.stroke();
-    y+=88;
-  }
-
-  tastingRow("☕",cafe.drink?.type,cafe.drink?.note||cafe.drink?.mod,category10(cafe.drink));
-  tastingRow("🥐",cafe.pastry?.type,cafe.pastry?.note||cafe.pastry?.subtype,category10(cafe.pastry));
-
-  const verdict=cafe.reason||cafe.take||"A café worth remembering.";
-  y+=20;ctx.fillStyle="#4f4037";ctx.font=`500 ${isStory?30:27}px Georgia`;
-  for(const line of wrap(ctx,verdict,W-p*2,isStory?4:3)){ctx.fillText(line,p,y);y+=isStory?42:38}
-
-  const contentHeight=y+30;
-  ctx=heroCtx;
-  const available=H-heroH-135;
-  const fit=Math.min(1,available/contentHeight);
-  ctx.drawImage(paper,0,0,W,contentHeight,(W-W*fit)/2,heroH+12,W*fit,contentHeight*fit);
-  const footer=H-55;
-  ctx.strokeStyle="#d8c7ad";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p,footer-52);ctx.lineTo(W-p,footer-52);ctx.stroke();
-  ctx.fillStyle="#a88345";ctx.font="800 19px Arial";ctx.fillText("✦  FIKA REVIEWS",p,footer);
-  ctx.textAlign="right";ctx.fillStyle="#6c5d51";ctx.font="700 20px Arial";ctx.fillText("@WorthTheFika",W-p,footer);ctx.textAlign="left";
-
-  const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/png",1));
-  if(!blob)throw new Error("card_failed");
-  return blob;
-}
-async function exportCard(cafe,format){
-  const isStory=format==="story";
-  const blob=await renderCard(cafe,format);
-  const u=URL.createObjectURL(blob),a=document.createElement("a");
-  a.href=u;a.download=String(cafe.name||"fika").toLowerCase().replace(/[^a-z0-9]+/g,"-")+"-"+(isStory?"story":"post")+".png";
-  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500);
+    const verdict=cafe.reason||cafe.take;
+    if(verdict){y+=46*scale;ctx.font=`bold ${(story?38:34)*scale}px Georgia`;for(const line of wrap(ctx,verdict,W-p*2,story?4:3)){text(line,ctx.font,"#432618",p,y,W-p*2);y+=(story?47:42)*scale}}
+    return y-heroH;
+  };
+  let scale=story?1.22:1;for(let i=0;i<6;i++){const used=drawBody(scale,false);if(used<=available)break;scale*=available/used*.98}
+  drawBody(scale,true);
+  ctx.strokeStyle="#c9b492";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p,H-100);ctx.lineTo(W-p,H-100);ctx.stroke();ctx.fillStyle="#80603c";ctx.font="bold 24px Arial";ctx.fillText("FIKA REVIEWS",p,H-52);ctx.textAlign="right";ctx.fillText("@WorthTheFika",W-p,H-52);ctx.textAlign="left";
+  if(raw)return canvas;
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",.95));if(!blob)throw new Error("card_failed");return blob;
 }
 function caption(cafe){
   const tags=(cafe.bestFor||[]).slice(0,4).map(x=>"#"+String(x).replace(/[^a-z0-9]+/gi,"")).filter(Boolean).join(" ");
   return [cafe.name+" · "+(cafe.city||""),"Worth the Fika score: "+score(cafe)+"/100",cafe.take||cafe.reason||"",cafe.drink?.type?"☕ "+cafe.drink.type:"",cafe.pastry?.type?"🥐 "+cafe.pastry.type:"","",tags+" #WorthTheFika #Fika"].join("\n");
 }
 
-function CardPreview({cafe,format}){
-  const [url,setUrl]=useState("");
-  useEffect(()=>{let cancelled=false,objectUrl;setUrl("");const timer=setTimeout(()=>{renderCard(cafe,format).then(blob=>{if(cancelled)return;objectUrl=URL.createObjectURL(blob);setUrl(objectUrl)}).catch(()=>{if(!cancelled)setUrl("error")})},150);return()=>{cancelled=true;clearTimeout(timer);if(objectUrl)URL.revokeObjectURL(objectUrl)}},[cafe,format]);
-  return url&&url!=="error"?<img className={"cv2-card-image "+format} src={url} alt={"Instagram card preview for "+cafe.name}/>:<div className="cv2-preview-loading" role="status">{url==="error"?"Preview unavailable. Try downloading the card.":"Preparing your card…"}</div>;
+function CardPreview({cafe,format,onTransform,onStatus}){
+  const canvasRef=useRef(null),pointers=useRef(new Map()),start=useRef(null),latest=useRef(cafe);
+  const [prepared,setPrepared]=useState(null),[error,setError]=useState(false);
+  latest.current=cafe;
+  const fingerprint=JSON.stringify([cafe,format]);
+  useEffect(()=>{
+    let cancelled=false;setError(false);
+    renderCard(cafe,format,true).then(canvas=>{
+      if(cancelled)return;
+      const target=canvasRef.current;target.width=canvas.width;target.height=canvas.height;target.getContext("2d").drawImage(canvas,0,0);
+      canvas.toBlob(blob=>{if(!cancelled&&blob)setPrepared({blob,fingerprint})},"image/jpeg",.95);
+    }).catch(()=>{if(!cancelled)setError(true)});
+    return()=>{cancelled=true};
+  },[cafe,format]);
+  function base(el){const box=el.getBoundingClientRect();start.current={points:[...pointers.current.values()],box,transform:{cardZoom:Number(latest.current.cardZoom)||1,cardX:Number(latest.current.cardX)||0,cardY:Number(latest.current.cardY)||0,cardRotation:Number(latest.current.cardRotation)||0}}}
+  function point(e){const r=e.currentTarget.getBoundingClientRect();return {x:e.clientX-r.left,y:e.clientY-r.top}}
+  function down(e){if(!cafe.imgs?.[0]||pointers.current.size>=2)return;e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);pointers.current.set(e.pointerId,point(e));base(e.currentTarget)}
+  function move(e){if(!pointers.current.has(e.pointerId))return;e.preventDefault();pointers.current.set(e.pointerId,point(e));const next=gestureTransform(start.current,[...pointers.current.values()],start.current.box);latest.current={...latest.current,...next};onTransform(next)}
+  function up(e){pointers.current.delete(e.pointerId);if(pointers.current.size)base(e.currentTarget);else start.current=null}
+  function download(){
+    if(!prepared||prepared.fingerprint!==fingerprint)return;
+    const name=(cafe.name||"fika").toLowerCase().replace(/[^a-z0-9]+/g,"-")+"-"+format+".jpg";
+    const file=new File([prepared.blob],name,{type:"image/jpeg"});
+    if(navigator.canShare?.({files:[file]})&&navigator.share){
+      navigator.share({files:[file],title:cafe.name}).then(()=>onStatus("Card shared · choose Save Image to keep it in Photos")).catch(e=>{if(e.name!=="AbortError")onStatus("Sharing could not open. Use Save JPEG below.")});
+    }else saveJPEG();
+  }
+  function saveJPEG(){if(!prepared||prepared.fingerprint!==fingerprint)return;const u=URL.createObjectURL(prepared.blob),a=document.createElement("a");a.href=u;a.download=(cafe.name||"fika").toLowerCase().replace(/[^a-z0-9]+/g,"-")+"-"+format+".jpg";a.click();setTimeout(()=>URL.revokeObjectURL(u),60000);onStatus("JPEG downloaded. On iPhone, use Share → Save Image to add it to Photos.")}
+  return <div className="cv2-direct-card"><div className={"cv2-touch-preview "+format}>
+    <canvas ref={canvasRef} className="cv2-card-canvas" aria-label={"Instagram card for "+cafe.name}/>
+    {cafe.imgs?.[0]&&<div className="cv2-photo-touch" style={{height:format==="story"?"45%":"43%"}} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onLostPointerCapture={up} aria-label="Drag photo; use two fingers to zoom and rotate"/>}
+  </div>
+  {error&&<p role="alert">The preview could not load. Please try again.</p>}
+  <p className="cv2-gesture-hint">{cafe.imgs?.[0]?"Drag the photo. Use two fingers to zoom and rotate.":"Add a cover photo in Photos to create your card."}</p>
+  {cafe.imgs?.[0]&&<div className="cv2-inline-photo-actions"><button onClick={()=>onTransform({cardZoom:1,cardX:0,cardY:0,cardRotation:0})}>Reset photo</button><button aria-label="Zoom photo out" onClick={()=>onTransform({cardZoom:Math.max(.7,(Number(cafe.cardZoom)||1)-.1)})}>−</button><button aria-label="Zoom photo in" onClick={()=>onTransform({cardZoom:Math.min(5,(Number(cafe.cardZoom)||1)+.1)})}>＋</button><button aria-label="Rotate photo 90 degrees" onClick={()=>onTransform({cardRotation:((Number(cafe.cardRotation)||0)+90)%360})}>↻</button></div>}
+  <button className="download-card" disabled={!prepared||prepared.fingerprint!==fingerprint} onClick={download}>Download the card</button>
+  <p className="cv2-export-hint">High-quality JPEG · {format==="story"?"1080 × 1920":"1080 × 1350"}. On iPhone, choose Save Image in the share sheet.</p>
+  <button className="cv2-file-fallback" disabled={!prepared||prepared.fingerprint!==fingerprint} onClick={saveJPEG}>Save JPEG to Files instead</button>
+  </div>;
 }
 
 export default function CreatorStudioV2(){
@@ -210,10 +166,12 @@ export default function CreatorStudioV2(){
   const [city,setCity]=useState("Copenhagen");
   const [loaded,setLoaded]=useState(false);
   const [loadError,setLoadError]=useState(false);
-  const [saved,setSaved]=useState("[]");
+  const [saved,setSaved]=useState({});
+  const [published,setPublished]=useState({});
+  const [versions,setVersions]=useState({});
   const [publishing,setPublishing]=useState(false);
   const [undo,setUndo]=useState(null);
-  const dirty=loaded&&JSON.stringify(cafes)!==saved;
+  const dirty=loaded&&cafes.some(c=>JSON.stringify(c)!==saved[c.id]);
   useEffect(()=>{if(!dirty)return;const warn=e=>{e.preventDefault();e.returnValue=""};window.addEventListener("beforeunload",warn);return()=>window.removeEventListener("beforeunload",warn)},[dirty]);
   const [selectedId,setSelectedId]=useState(null);
   const [code,setCode]=useState("");
@@ -229,14 +187,19 @@ export default function CreatorStudioV2(){
   useEffect(()=>{let cancelled=false;sessionStorage.removeItem("wtfika:admin");fetch("/api/admin-check",{credentials:"same-origin",cache:"no-store"}).then(r=>{if(!cancelled)setReady(r.ok)}).catch(()=>{}).finally(()=>{if(!cancelled)setCheckingSession(false)});return()=>{cancelled=true}},[]);
 
   useEffect(()=>{
+    if(!ready)return;
     let cancelled=false;
     (async()=>{
       try{
-        const [revRes,cphRes,stoRes]=await Promise.all([fetch(API),fetch("/copenhagen50.json"),fetch("/stockholm50.json")]);
+        const [revRes,cphRes,stoRes]=await Promise.all([fetch(API,{credentials:"same-origin",cache:"no-store"}),fetch("/copenhagen50.json"),fetch("/stockholm50.json")]);
         if(!revRes.ok||!cphRes.ok||!stoRes.ok)throw new Error("load_failed");
-        const rev=await revRes.json();
-        if(!Array.isArray(rev))throw new Error("bad_reviews");
-        setSaved(JSON.stringify(rev));
+        const data=await revRes.json();
+        if(!Array.isArray(data.published)||!Array.isArray(data.drafts))throw new Error("bad_reviews");
+        const publicMap=Object.fromEntries(data.published.map(c=>[c.id,c]));
+        const merged={...publicMap},versionMap={};
+        for(const r of data.drafts){versionMap[r.cafe.id]=r.etag;if(!r.deleted)merged[r.cafe.id]=r.cafe}
+        const rev=Object.values(merged);
+        setPublished(publicMap);setVersions(versionMap);setSaved(Object.fromEntries(rev.map(c=>[c.id,JSON.stringify(c)])));
         const cph=await cphRes.json();
         const sto=await stoRes.json();
         if(cancelled)return;
@@ -259,7 +222,7 @@ export default function CreatorStudioV2(){
       }catch{setLoadError(true)}
     })();
     return()=>{cancelled=true};
-  },[]);
+  },[ready]);
 
   async function loginWith(value,show=true){
     setStatus("Checking…");
@@ -277,13 +240,14 @@ export default function CreatorStudioV2(){
   }
 
   function openReview(c){setSelectedId(c.id);setTab("review");setView("editor");window.scrollTo(0,0)}
-  function manageReview(action){
-    const removing=action==="remove";
-    if(!window.confirm(removing?`Remove ${selected.name} from your reviews? The Top 50 listing stays. Publish to apply this change.`:`Reset ratings, notes and photos for ${selected.name}? Café details stay. Publish to apply this change.`))return;
-    setUndo(cafes);
-    if(removing){setCafes(list=>list.filter(c=>c.id!==selected.id));setSelectedId(null);setView("library")}
-    else{const blank=newCafe();setCafes(list=>list.map(c=>c.id===selected.id?{...c,drink:blank.drink,pastry:blank.pastry,atmosphere:0,service:0,value:0,bestFor:[],take:"",reason:"",scene:"",visitedOn:"",imgs:[],cardZoom:1,cardX:0,cardY:0}:c));setTab("review")}
-    setStatus(removing?"Review removed · publish to update the guide":"Review reset · publish to update the guide");
+  async function manageReview(action){
+    if(action==="remove"){
+      if(!window.confirm(`Remove ${selected.name} and its saved draft? This also removes its published review. The Top 50 listing stays.`))return;
+      if(await persist("remove")){setCafes(list=>list.filter(c=>c.id!==selected.id));setSelectedId(null);setView("library");setUndo(null)}
+      return;
+    }
+    if(!window.confirm(`Reset ratings, notes and photos for ${selected.name}? Café details stay. The published version stays unchanged until you publish.`))return;
+    setUndo(cafes);const blank=newCafe();setCafes(list=>list.map(c=>c.id===selected.id?{...c,drink:blank.drink,pastry:blank.pastry,atmosphere:0,service:0,value:0,bestFor:[],take:"",reason:"",scene:"",visitedOn:"",imgs:[],cardZoom:1,cardX:0,cardY:0,cardRotation:0}:c));setTab("review");setStatus("Review reset locally · save the draft when ready");
   }
   function linkCatalog(catalogId){
     if(!catalogId){patch("catalogId","");return}
@@ -292,17 +256,24 @@ export default function CreatorStudioV2(){
     setStatus(`Linked to ${item.city||"Copenhagen"} 50`);
   }
 
-  async function publish(){
-    if(!loaded||publishing||uploading)return;
-    const snapshot=JSON.stringify(cafes);setPublishing(true);setStatus("Publishing…");
-    try{const r=await fetch(API,{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({cafes})});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"failed");setSaved(snapshot);setUndo(null);setStatus("Published ✓");setTimeout(()=>setStatus(""),2500)}
-    catch(e){if(e.message==="unauthorized")setReady(false);setStatus(e.message==="unauthorized"?"Session expired. Please sign in again.":"Publish failed — your changes are still here")}finally{setPublishing(false)}
+  function reviewState(c){if(!published[c.id])return "Draft";return JSON.stringify(c)===JSON.stringify(published[c.id])?"Published":"Unpublished changes"}
+  async function persist(action){
+    if(!selected||!loaded||publishing||uploading)return false;
+    const cafe=structuredClone(selected),snapshot=JSON.stringify(cafe);setPublishing(true);setStatus(action==="save"?"Saving draft…":action==="publish"?"Publishing this café…":"Updating café…");
+    try{
+      const r=await fetch(API,{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({action,cafe,etag:versions[cafe.id]||null})});
+      const d=await r.json();
+      if(d.record){setVersions(v=>({...v,[cafe.id]:d.record.etag}));setSaved(v=>({...v,[cafe.id]:JSON.stringify(d.record.cafe)}));setCafes(list=>list.map(c=>c.id===cafe.id&&JSON.stringify(c)===snapshot?d.record.cafe:c))}
+      if(!r.ok)throw new Error(d.error||"Could not save this café");
+      if(action==="publish")setPublished(v=>({...v,[cafe.id]:d.record.cafe}));
+      if(action==="remove"||action==="unpublish")setPublished(v=>{const next={...v};delete next[cafe.id];return next});
+      setUndo(null);setStatus(action==="save"?"Draft saved privately ✓":action==="publish"?"This café is now published ✓":action==="unpublish"?"Unpublished · private draft kept":"Review removed");return true;
+    }catch(e){if(e.message==="unauthorized")setReady(false);setStatus(e.message==="unauthorized"?"Please sign in again. Your inputs are still here.":e.message);return false}finally{setPublishing(false)}
   }
-
   async function upload(event){
     const files=Array.from(event.target.files||[]).slice(0,6);event.target.value="";if(!files.length||!selected)return;
     setUploading(true);setStatus("Uploading photos…");const urls=[];
-    try{for(const file of files){const form=new FormData();form.append("file",file);const r=await fetch("/api/images/upload",{method:"POST",credentials:"same-origin",body:form});const d=await r.json();if(!r.ok)throw new Error(d.error);urls.push(d.url)}patch("imgs",[...(selected.imgs||[]),...urls].slice(0,6));setStatus("Photos added · publish to save")}
+    try{for(const file of files){const form=new FormData();form.append("file",file);const r=await fetch("/api/images/upload",{method:"POST",credentials:"same-origin",body:form});const d=await r.json();if(!r.ok)throw new Error(d.error);urls.push(d.url)}patch("imgs",[...(selected.imgs||[]),...urls].slice(0,6));setStatus("Photos added · save draft to keep them")}
     catch{setStatus("Photo upload failed")}
     finally{setUploading(false)}
   }
@@ -318,24 +289,25 @@ export default function CreatorStudioV2(){
   const zoom=Number(selected?.cardZoom)||1,x=Number(selected?.cardX)||0,y=Number(selected?.cardY)||0;
 
   return <main className="cv2-shell">
-    <header className="cv2-header"><div>{mark()}<div><span>CREATOR STUDIO</span><h1>Worth the Fika</h1></div></div><nav><small>{status}</small><a href="/">Public guide</a><button onClick={async()=>{try{const r=await fetch("/api/admin-check",{method:"DELETE",credentials:"same-origin"});if(!r.ok)throw new Error();setCode("");setReady(false);setStatus("")}catch{setStatus("Could not log out. Please try again.")}}}>Log out</button><button className="primary" disabled={!dirty||publishing||uploading} onClick={publish}>{publishing?"Publishing…":"Publish changes"}</button></nav></header>
-    <div className="cv2-notice" role="status"><span>{status|| (dirty?"Unpublished changes · publish when ready":"All changes published")}</span>{undo&&<button onClick={()=>{setCafes(undo);setUndo(null);setStatus("Change undone")}}>Undo</button>}</div>
+    <header className="cv2-header"><div>{mark()}<div><span>CREATOR STUDIO</span><h1>Worth the Fika</h1></div></div><nav><small>{status}</small><a href="/">Public guide</a><button onClick={async()=>{try{const r=await fetch("/api/admin-check",{method:"DELETE",credentials:"same-origin"});if(!r.ok)throw new Error();setCode("");setReady(false);setStatus("")}catch{setStatus("Could not log out. Please try again.")}}}>Log out</button></nav></header>
+    <div className="cv2-notice" role="status"><span>{status|| (dirty?"Unsaved inputs · open each café to save its draft":"Drafts saved · publish each café when ready")}</span>{undo&&<button onClick={()=>{setCafes(undo);setUndo(null);setStatus("Change undone")}}>Undo</button>}</div>
     {view!=="editor"?<section className="cv2-library">
       <div className="cv2-library-heading"><div><p className="cv2-eyebrow">Your café journal</p><h2>{view==="add"?"Add a café":"My reviews"}</h2><p>{cafes.length} cafés · open a review to edit, add photos or create an Instagram card.</p></div><button className="primary" onClick={()=>{setView(view==="add"?"library":"add");setSearch("")}}>{view==="add"?"← My reviews":"+ Add café"}</button></div>
       {view==="add"&&<div className="cv2-add-options"><button onClick={()=>add()}><b>＋ A café outside the Top 50</b><span>Start with a name and add your own details.</span></button><h3>Choose from the Top 50</h3><div className="format-toggle">{["Copenhagen","Stockholm"].map(c=><button key={c} className={city===c?"active":""} onClick={()=>setCity(c)}>{c}</button>)}</div></div>}
       <input className="cv2-search" type="search" aria-label="Search cafés" placeholder={view==="add"?"Search the Top 50…":"Search your reviews…"} value={search} onChange={e=>setSearch(e.target.value)}/>
       <div className="cv2-review-grid">{(view==="add"?catalog.filter(c=>c.city===city):cafes).filter(c=>normalize(c.name+" "+c.city).includes(normalize(search))).map(c=>{
         const existing=view==="add"?cafes.find(r=>r.catalogId===c.id||normalize(r.name)===normalize(c.name)):c;
-        return <button className="cv2-review-tile" key={c.id} onClick={()=>existing?openReview(existing):add(c)}><div className="cv2-tile-photo">{existing?.imgs?.[0]?<img src={existing.imgs[0]} alt=""/>:<span>{initials(c.name)}</span>}<em>{existing?`${score(existing)||"–"}/100`:`#${c.rank}`}</em></div><div className="cv2-tile-copy"><h3>{c.name}</h3><p>{c.city} · {existing?`${existing.imgs?.length||0} photos`:c.address}</p>{existing&&<p className="cv2-tile-verdict">{existing.take||existing.reason||"Add your tasting notes and verdict"}</p>}<strong>{existing?"Open review →":"Start review +"}</strong></div></button>
+        return <button className="cv2-review-tile" key={c.id} onClick={()=>existing?openReview(existing):add(c)}><div className="cv2-tile-photo">{existing?.imgs?.[0]?<img src={existing.imgs[0]} alt=""/>:<span>{initials(c.name)}</span>}<em>{existing?`${score(existing)||"–"}/100`:`#${c.rank}`}</em></div><div className="cv2-tile-copy"><h3>{c.name}</h3><p>{c.city} · {existing?`${existing.imgs?.length||0} photos`:c.address}</p>{existing&&<p className="cv2-review-state">{reviewState(existing)}{JSON.stringify(existing)!==saved[existing.id]?" · Unsaved":""}</p>}{existing&&<p className="cv2-tile-verdict">{existing.take||existing.reason||"Add your tasting notes and verdict"}</p>}<strong>{existing?"Open review →":"Start review +"}</strong></div></button>
       })}</div>
       {view==="library"&&!cafes.length&&<div className="cv2-card"><h3>Your first fika starts here.</h3><p>Tap Add café to choose a Top 50 café or add your own discovery.</p></div>}
       {search&&!(view==="add"?catalog.filter(c=>c.city===city):cafes).some(c=>normalize(c.name+" "+c.city).includes(normalize(search)))&&<p>No cafés match your search.</p>}
     </section>:selected&&<div className="cv2-layout">
       <section className="cv2-content">
         <button className="cv2-back" onClick={()=>{setView("library");setSearch("")}}>← My reviews</button>
+        <div className="cv2-savebar"><div><b>{reviewState(selected)}</b><small>{JSON.stringify(selected)===saved[selected.id]?"Saved":"Unsaved inputs"}</small></div><button disabled={publishing||uploading} onClick={()=>persist("save")}>Save draft</button><button className="primary" disabled={publishing||uploading} onClick={()=>persist("publish")}>Publish café</button></div>
         <div className="cv2-title"><div><p>{selected.visitedOn||"Draft review"}</p><h2>{selected.name}</h2></div><strong>{score(selected)||"–"}<small>/100</small></strong></div>
         <div className="cv2-review-summary">{cover?<img src={cover} alt={selected.name}/>:<button onClick={()=>setTab("photos")}>＋ Add a cover photo</button>}<div><p>{selected.city} · {selected.catalogId?"Top 50 café":"Your discovery"}</p><p>{selected.take||selected.reason||"Add your verdict to bring this review to life."}</p><div className="cv2-summary-scores"><span>Coffee <b>{category10(selected.drink)}/10</b></span><span>Pastry <b>{category10(selected.pastry)}/10</b></span></div></div></div>
-        <details className="cv2-manage"><summary>Manage this review</summary><p>Reset clears ratings, notes and photos, keeping café details. Remove deletes this review. Publish to apply either change.</p><button onClick={()=>manageReview("reset")}>Reset review data</button><button onClick={()=>manageReview("remove")}>Remove review</button></details>
+        <details className="cv2-manage"><summary>Manage this review</summary><p>Reset clears the draft’s ratings, notes and photos. Remove deletes the draft and published review. Unpublish keeps a private draft.</p><button onClick={()=>manageReview("reset")}>Reset review data</button><button disabled={publishing} onClick={()=>manageReview("remove")}>Remove review</button>{published[selected.id]&&<button disabled={publishing} onClick={()=>{if(window.confirm("Remove this review from the public guide and keep it as a private draft?"))persist("unpublish")}}>Unpublish café</button>}</details>
         <div className="cv2-tabs"><button className={tab==="review"?"active":""} onClick={()=>setTab("review")}>1 · Review</button><button className={tab==="photos"?"active":""} onClick={()=>setTab("photos")}>2 · Photos ({photos.length})</button><button className={tab==="social"?"active":""} onClick={()=>setTab("social")}>3 · Instagram</button></div>
 
         {tab==="review"&&<div className="cv2-card">
@@ -373,23 +345,14 @@ export default function CreatorStudioV2(){
         </div>}
 
         {tab==="social"&&<div className="cv2-card social-card-editor">
-          <div className="section-head"><div><p className="cv2-eyebrow">Instagram</p><h3>Your finished Fika card</h3></div><span>Post is the default. Story uses the same visual language in 9:16.</span></div>
+          <div className="section-head"><div><p className="cv2-eyebrow">Instagram</p><h3>Your finished Fika card</h3></div><span>Choose a format, frame your photo with your fingers, then download your card.</span></div>
           <div className="format-toggle"><button className={format==="post"?"active":""} onClick={()=>setFormat("post")}>Post · 1080×1350</button><button className={format==="story"?"active":""} onClick={()=>setFormat("story")}>Story · 1080×1920</button></div>
           <div className="card-edit-grid">
-            <CardPreview cafe={selected} format={format}/>
-            <aside className="crop-controls">
-              <h4>Frame the hero photo</h4>
-              <p>Zoom in or out and move the image until the coffee, pastry or room sits exactly where you want it.</p>
-              <label>Zoom in / out <b>{zoom.toFixed(2)}×</b><input type="range" min=".7" max="2.5" step=".05" value={zoom} onChange={e=>patch("cardZoom",Number(e.target.value))}/></label>
-              <label>Move left / right <b>{x}</b><input type="range" min="-100" max="100" step="2" value={x} onChange={e=>patch("cardX",Number(e.target.value))}/></label>
-              <label>Move up / down <b>{y}</b><input type="range" min="-100" max="100" step="2" value={y} onChange={e=>patch("cardY",Number(e.target.value))}/></label>
-              <button className="reset-crop" onClick={()=>{patch("cardZoom",1);patch("cardX",0);patch("cardY",0)}}>Reset framing</button>
-              <button className="download-card" onClick={async()=>{setStatus("Creating card…");try{await exportCard(selected,format);setStatus((format==="post"?"Post":"Story")+" downloaded ✓")}catch{setStatus("Card export failed")}}}>Download {format==="post"?"Instagram post":"Story"}</button>
-            </aside>
+            <CardPreview cafe={selected} format={format} onStatus={setStatus} onTransform={values=>setCafes(list=>list.map(c=>c.id===selected.id?{...c,...values}:c))}/>
           </div>
           <div className="caption-panel"><pre>{caption(selected)}</pre><button onClick={async()=>{await navigator.clipboard.writeText(caption(selected));setStatus("Caption copied ✓")}}>Copy caption</button></div>
         </div>}
-        <footer className="cv2-footer"><span>Changes stay private until you press <b>Publish changes</b>.</span><div><button onClick={()=>setTab(tab==="review"?"photos":tab==="photos"?"social":"review")}>{tab==="review"?"Next: photos":tab==="photos"?"Next: Instagram":"Back to review"}</button><button className="primary" disabled={!dirty||publishing||uploading} onClick={publish}>{publishing?"Publishing…":"Publish changes"}</button></div></footer>
+        <footer className="cv2-footer"><span><b>Save draft</b> keeps this café private. <b>Publish café</b> updates only this review.</span><div><button onClick={()=>setTab(tab==="review"?"photos":tab==="photos"?"social":"review")}>{tab==="review"?"Next: photos":tab==="photos"?"Next: Instagram":"Back to review"}</button><button disabled={publishing||uploading} onClick={()=>persist("save")}>Save draft</button><button className="primary" disabled={publishing||uploading} onClick={()=>persist("publish")}>Publish café</button></div></footer>
       </section>
     </div>}
   </main>;
