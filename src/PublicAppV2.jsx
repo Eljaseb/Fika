@@ -1,4 +1,4 @@
-import {tagLabel,criterionLabel,foodEmoji,tastingMeta,ratingEmoji,reviewMonth,priceLabel} from "./tasting.js";
+import {tagLabel,criterionLabel,foodEmoji,tastingMeta,ratingEmoji,reviewMonth,priceLabel,ratingEntries} from "./tasting.js";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import L from "leaflet";
@@ -50,7 +50,7 @@ function avg(values) {
 }
 
 function categoryAverage(category) {
-  return avg(Object.values(category?.ratings || {}));
+  return avg(ratingEntries(category).map(([,value])=>value));
 }
 
 function fikaScore(cafe) {
@@ -345,7 +345,7 @@ function categoryHasData(category) {
 
 function EmojiScore({value,emoji="⭐",max=5}){
   const n=Math.max(0,Math.min(max,Number(value)||0));
-  return <span className="emoji-score" style={{background:`linear-gradient(to right,#a9bd8c ${n/max*100}%,#e8dfd0 ${n/max*100}%)`}} role="img" aria-label={n?`${n} out of ${max}`:"Not rated"}>{Array.from({length:5},(_,i)=><span className="emoji-score-cell" key={i}><span className="emoji-score-empty">{emoji}</span><span className="emoji-score-fill" style={{clipPath:`inset(0 ${100-Math.max(0,Math.min(1,n/max*5-i))*100}% 0 0)`}}>{emoji}</span></span>)}</span>;
+  return <span className="emoji-score" style={{background:`linear-gradient(to right,#a9bd8c ${n/max*100}%,#e8dfd0 ${n/max*100}%)`}} role="img" aria-label={n?`${n} out of ${max}`:"Not rated"}/>;
 }
 
 function CafeLocationMap({cafe,review,city}) {
@@ -437,20 +437,21 @@ function Detail({cafe,review,onClose,city}) {
 
         {review ? <>
           <div className="rating-summary">
-            <div className="rating-summary-item overall"><span>Overall</span><EmojiScore value={score} max={10} emoji="⭐"/></div>
-            {coffeeScore && <button className="rating-summary-item tasting-trigger" aria-expanded={tasting==="drink"} onClick={()=>setTasting(tasting==="drink"?null:"drink")}><span>{foodEmoji(review.drink?.type)} Drink ↗</span><EmojiScore value={coffeeScore} max={10} emoji={foodEmoji(review.drink?.type)}/></button>}
-            {pastryScore && <button className="rating-summary-item tasting-trigger" aria-expanded={tasting==="pastry"} onClick={()=>setTasting(tasting==="pastry"?null:"pastry")}><span>🥐 Pastry ↗</span><EmojiScore value={pastryScore} max={10} emoji={foodEmoji(review.pastry?.type,"pastry")}/></button>}
+            <button className="rating-summary-item overall tasting-trigger" aria-expanded={tasting==="overall"} onClick={()=>setTasting(tasting==="overall"?null:"overall")}><span>Overall ↗</span><strong>{score}</strong><small>/10</small></button>
+            {coffeeScore && <button className="rating-summary-item tasting-trigger" aria-expanded={tasting==="drink"} onClick={()=>setTasting(tasting==="drink"?null:"drink")}><span>{foodEmoji(review.drink?.type)} Drink ↗</span><strong>{coffeeScore}</strong><small>/10</small></button>}
+            {pastryScore && <button className="rating-summary-item tasting-trigger" aria-expanded={tasting==="pastry"} onClick={()=>setTasting(tasting==="pastry"?null:"pastry")}><span>🥐 Pastry ↗</span><strong>{pastryScore}</strong><small>/10</small></button>}
           </div>
-          {tasting&&<section ref={tastingRef} className="tasting-breakdown" aria-label="Detailed tasting ratings">
+          {tasting&&tasting!=="overall"&&<section ref={tastingRef} className="tasting-breakdown" aria-label="Detailed tasting ratings">
             <h3>{foodEmoji(review[tasting]?.type,tasting)} {review[tasting]?.type|| (tasting==="drink"?"Drink":"Pastry")}</h3>
             {review[tasting]?.photo&&<img className="tasting-photo" src={review[tasting].photo} alt={review[tasting].type||tasting}/>}
             <p>{tastingMeta(review[tasting])}</p>
             <p>🏷️ {priceLabel(review[tasting]?.price,review.country)}{reviewMonth(review.visitedOn)?" · "+reviewMonth(review.visitedOn):""}</p>
             {review[tasting]?.note&&<p className="tasting-note">{review[tasting].note}</p>}
-            <p>Each scale fills up to five emojis.</p>
-            <div className="tasting-criteria">{Object.entries(review[tasting]?.ratings||{}).map(([label,value])=><div key={label}><span>{criterionLabel(label)}</span><EmojiScore value={value} emoji={ratingEmoji(label)}/></div>)}</div>
-            {!Object.keys(review[tasting]?.ratings||{}).length&&<p>No individual ratings added yet.</p>}
+            <p>Score breakdown</p>
+            <div className="tasting-criteria">{ratingEntries(review[tasting]).map(([label,value])=><div key={label}><span>{criterionLabel(label)}</span><EmojiScore value={value} emoji={ratingEmoji(label)}/></div>)}</div>
+            {!ratingEntries(review[tasting]).length&&<p>No individual ratings added yet.</p>}
           </section>}
+          {tasting==="overall"&&<section ref={tastingRef} className="tasting-breakdown" aria-label="Overall score breakdown"><h3>⭐ Overall experience</h3><p>The tasting contributes 72% and atmosphere, service and value contribute 28% when both are rated.</p><div className="tasting-criteria">{[["Drink",categoryAverage(review.drink)],["Pastry",categoryAverage(review.pastry)],["Atmosphere",review.atmosphere],["Service",review.service],["Value",review.value]].filter(([,value])=>Number(value)>0).map(([label,value])=><div key={label}><span>{label==="Drink"?"☕ Drink":label==="Pastry"?"🥐 Pastry":criterionLabel(label)}</span><EmojiScore value={value}/></div>)}</div></section>}
           {(review.reason || review.take) && <p className="detail-verdict">{review.reason || review.take}</p>}
         </> : <>
           <p className="detail-verdict">{cafe.why}</p>

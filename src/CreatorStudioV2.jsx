@@ -1,17 +1,17 @@
-import {DRINKS,PASTRIES,TAGS,tagLabel,criterionLabel,foodEmoji,isCoffee,tastingMeta,ratingEmoji,reviewMonth,priceLabel} from "./tasting.js";
+import {DRINKS,PASTRIES,TAGS,tagLabel,criterionLabel,foodEmoji,isCoffee,tastingMeta,ratingEmoji,reviewMonth,priceLabel,ratingEntries} from "./tasting.js";
 
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import "./creator-v2.css";
 import {gestureTransform} from "./photo-gesture.js";
 
 const API = "/api/admin-reviews";
-const DRINK_CRITERIA = ["Taste","Aroma","Body / texture","Temperature","Balance"];
+const DRINK_CRITERIA = ["Taste","Aroma","Body","Temperature","Balance"];
 const PASTRY_CRITERIA = ["Flavour","Texture","Freshness","Filling","Presentation"];
 
 function avg(values){const nums=values.map(Number).filter(n=>Number.isFinite(n)&&n>0);return nums.length?nums.reduce((a,b)=>a+b,0)/nums.length:0}
-function score(cafe){const d=avg(Object.values(cafe?.drink?.ratings||{}));const p=avg(Object.values(cafe?.pastry?.ratings||{}));const s=avg([cafe?.atmosphere,cafe?.service,cafe?.value]);const h=avg([d,p].filter(Boolean));const total=h&&s?h*.72+s*.28:h||s||0;return total?Math.round(total*20):0}
+function score(cafe){const d=avg(ratingEntries(cafe?.drink).map(([,value])=>value));const p=avg(ratingEntries(cafe?.pastry).map(([,value])=>value));const s=avg([cafe?.atmosphere,cafe?.service,cafe?.value]);const h=avg([d,p].filter(Boolean));const total=h&&s?h*.72+s*.28:h||s||0;return total?Math.round(total*20):0}
 function score10(cafe){const s=score(cafe);return s?(s/10).toFixed(1):"–"}
-function category10(category){const s=avg(Object.values(category?.ratings||{}));return s?(s*2).toFixed(1):"–"}
+function category10(category){const s=avg(ratingEntries(category).map(([,value])=>value));return s?(s*2).toFixed(1):"–"}
 function normalize(v=""){return v.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}
 function mark(){return <div className="cv2-mark" style={{background:"#f8f4eb",overflow:"hidden"}}><img src="/icons/fika-admin.svg" alt="Worth the Fika" style={{display:"block",width:"100%",height:"100%",objectFit:"contain"}} /></div>}
 function initials(name){return String(name||"Fika").split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join("").toUpperCase()}
@@ -64,8 +64,7 @@ function wrap(ctx,text,maxWidth,maxLines){
 }
 function drawEmojiBar(ctx,value,emoji,x,y,width,height){
   const amount=Math.max(0,Math.min(5,Number(value)||0));
-  const cell=width/5;ctx.save();ctx.fillStyle="#e8dfd0";ctx.beginPath();ctx.roundRect(x,y,width,height,height/2);ctx.fill();if(amount){ctx.save();ctx.beginPath();ctx.roundRect(x,y,width,height,height/2);ctx.clip();ctx.fillStyle="#a9bd8c";ctx.fillRect(x,y,width*amount/5,height);ctx.restore()}ctx.font=`${height*.78}px "Apple Color Emoji","Segoe UI Emoji",Arial`;ctx.textAlign="center";ctx.textBaseline="middle";
-  for(let i=0;i<5;i++){const left=x+i*cell;ctx.globalAlpha=.16;ctx.fillText(emoji,left+cell/2,y+height/2,cell*.9);ctx.globalAlpha=1;const fill=Math.max(0,Math.min(1,amount-i));if(fill){ctx.save();ctx.beginPath();ctx.rect(left,y,cell*fill,height);ctx.clip();ctx.fillText(emoji,left+cell/2,y+height/2,cell*.9);ctx.restore()}}
+  ctx.save();ctx.fillStyle="#e8dfd0";ctx.beginPath();ctx.roundRect(x,y,width,height,height/2);ctx.fill();if(amount){ctx.save();ctx.beginPath();ctx.roundRect(x,y,width,height,height/2);ctx.clip();ctx.fillStyle="#a9bd8c";ctx.fillRect(x,y,width*amount/5,height);ctx.restore()}
   ctx.restore();
 }
 async function renderCard(cafe,format,raw=false){
@@ -104,7 +103,7 @@ async function renderCard(cafe,format,raw=false){
       text("🏷️ "+priceLabel(item.price,cafe.country),`bold ${30*scale}px Arial`,"#9c683d",p,y,W-p*2);y+=40*scale;
       const meta=tastingMeta(item);if(meta){text(meta,`${26*scale}px Arial`,"#72604e",p,y,W-p*2);y+=40*scale}
       text("TASTING DETAILS",`bold ${24*scale}px Arial`,"#9c683d",p,y,W-p*2);y+=18*scale;
-      for(const [label,value] of Object.entries(item.ratings||{})){
+      for(const [label,value] of ratingEntries(item)){
         y+=48*scale;text(criterionLabel(label),`bold ${32*scale}px Arial`,"#432618",p,y,W-p*2-360*scale);
         if(paint)drawEmojiBar(ctx,value,ratingEmoji(label),W-p-330*scale,y-34*scale,330*scale,44*scale);
       }
@@ -135,7 +134,7 @@ async function renderCard(cafe,format,raw=false){
   const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",.95));if(!blob)throw new Error("card_failed");return blob;
 }
 function caption(cafe){
-  if(cafe.itemCategory)return [cafe.name+" · "+cafe.cafeName,"Score: "+category10(cafe.itemCategory)+"/10",tastingMeta(cafe.itemCategory),cafe.itemCategory.note||"",...Object.entries(cafe.itemCategory.ratings||{}).map(([label,v])=>criterionLabel(label)+": "+(Number(v)>0?v+"/5":"Not rated")),"#WorthTheFika #Fika"].join("\n");
+  if(cafe.itemCategory)return [cafe.name+" · "+cafe.cafeName,"Score: "+category10(cafe.itemCategory)+"/10",tastingMeta(cafe.itemCategory),cafe.itemCategory.note||"",...ratingEntries(cafe.itemCategory).map(([label,v])=>criterionLabel(label)+": "+(Number(v)>0?v+"/5":"Not rated")),"#WorthTheFika #Fika"].join("\n");
   const tags=(cafe.bestFor||[]).slice(0,4).map(x=>"#"+String(x).replace(/[^a-z0-9]+/gi,"")).filter(Boolean).join(" ");
   return [cafe.name+" · "+(cafe.city||""),"Worth the Fika score: "+score(cafe)+"/100",cafe.take||cafe.reason||"",cafe.drink?.type?"☕ "+cafe.drink.type:"",cafe.pastry?.type?"🥐 "+cafe.pastry.type:"","",tags+" #WorthTheFika #Fika"].join("\n");
 }
