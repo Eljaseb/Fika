@@ -15,6 +15,7 @@ function cleanRatings(value) {
 function cleanCategory(value) {
   const v = value && typeof value === "object" ? value : {};
   return {
+    enabled: v.enabled !== false,
     type: cleanText(v.type, 100),
     shots: ["1","2","3"].includes(String(v.shots))?String(v.shots):"",
     photo: cleanImage(v.photo),

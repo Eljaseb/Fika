@@ -11,4 +11,4 @@ export function ratingEmoji(label){return criterionLabel(label).split(' ')[0]}
 export function reviewMonth(value){if(!/^\d{4}-\d{2}-\d{2}$/.test(value||''))return '';const d=new Date(value+'T12:00:00Z');return Number.isNaN(d.getTime())?'':new Intl.DateTimeFormat('en',{month:'short',year:'numeric',timeZone:'UTC'}).format(d)}
 export function priceLabel(value,country){const n=Number(value);return n>0?n.toLocaleString('en',{maximumFractionDigits:2})+(country==='Sweden'?' SEK':country==='Denmark'?' DKK':''):'Price not added'}
 
-export function ratingEntries(category){return Object.entries(category?.ratings||{}).filter(([label])=>!/^clarity$|^body\s*\/\s*texture$/i.test(label.trim()))}
+export function ratingEntries(category){return Object.entries(category?.enabled===false?{}:category?.ratings||{}).filter(([label])=>!/^clarity$|^body\s*\/\s*texture$/i.test(label.trim()))}

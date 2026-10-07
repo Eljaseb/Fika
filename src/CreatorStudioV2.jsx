@@ -29,7 +29,7 @@ function newCafe(catalogCafe){
     scene:"",
     imgs:[],
     drink:{type:"",mod:"",subtype:"",temp:"Hot",price:0,note:"",ratings:blankRatings(DRINK_CRITERIA)},
-    pastry:{type:"",mod:"",subtype:"",temp:"Room temp",price:0,note:"",ratings:blankRatings(PASTRY_CRITERIA)},
+    pastry:{enabled:false,type:"",mod:"",subtype:"",temp:"Room temp",price:0,note:"",ratings:blankRatings(PASTRY_CRITERIA)},
     atmosphere:0,service:0,value:0,bestFor:[],take:"",reason:"",
     cardZoom:1,cardX:0,cardY:0
   };
@@ -119,9 +119,9 @@ async function renderCard(cafe,format,raw=false){
     const tags=(cafe.bestFor||[]).slice(0,3).map(tagLabel).join("  ·  ");
     if(tags){y+=22*scale;text(tags,`bold ${25*scale}px Arial`,"#80634c",p,y,W-p*2);y+=26*scale}
     y+=22*scale;
-    if(cafe.drink?.type||cafe.pastry?.type){text("THE TASTING",`bold ${23*scale}px Arial`,"#9c683d",p,y,W-p*2);y+=22*scale}
+    if(cafe.drink?.type||(cafe.pastry?.enabled!==false&&cafe.pastry?.type)){text("THE TASTING",`bold ${23*scale}px Arial`,"#9c683d",p,y,W-p*2);y+=22*scale}
     for(const [label,category] of [["COFFEE",cafe.drink],["PASTRY",cafe.pastry]]){
-      if(!category?.type)continue;
+      if(!category?.type||category.enabled===false)continue;
       y+=48*scale;
       const scoreWidth=150*scale,priceWidth=190*scale,gap=24*scale;
       const nameWidth=W-p*2-scoreWidth-priceWidth-gap*2;
@@ -148,7 +148,7 @@ async function renderCard(cafe,format,raw=false){
 function caption(cafe){
   if(cafe.itemCategory)return [cafe.name+" · "+cafe.cafeName,"Score: "+category10(cafe.itemCategory)+"/10",tastingMeta(cafe.itemCategory),cafe.itemCategory.note||"",...ratingEntries(cafe.itemCategory).map(([label,v])=>criterionLabel(label)+": "+(Number(v)>0?v+"/5":"Not rated")),"#WorthTheFika #Fika"].join("\n");
   const tags=(cafe.bestFor||[]).slice(0,4).map(x=>"#"+String(x).replace(/[^a-z0-9]+/gi,"")).filter(Boolean).join(" ");
-  return [cafe.name+" · "+(cafe.city||""),"Worth the Fika score: "+score(cafe)+"/100",cafe.take||cafe.reason||"",cafe.drink?.type?"☕ "+cafe.drink.type:"",cafe.pastry?.type?"🥐 "+cafe.pastry.type:"","",tags+" #WorthTheFika #Fika"].join("\n");
+  return [cafe.name+" · "+(cafe.city||""),"Worth the Fika score: "+score(cafe)+"/100",cafe.take||cafe.reason||"",cafe.drink?.type?"☕ "+cafe.drink.type:"",cafe.pastry?.enabled!==false&&cafe.pastry?.type?"🥐 "+cafe.pastry.type:"","",tags+" #WorthTheFika #Fika"].join("\n");
 }
 
 function TypePicker({kind,value,onChange}){
@@ -229,6 +229,7 @@ export default function CreatorStudioV2(){
   const [cardKind,setCardKind]=useState("cafe");
   const selected=useMemo(()=>cafes.find(c=>String(c.id)===String(selectedId))||cafes[0],[cafes,selectedId]);
 
+  useEffect(()=>{if(cardKind==="pastry"&&(selected?.pastry?.enabled===false||!selected?.pastry?.type))setCardKind("cafe")},[selected,cardKind]);
   const cardCafe=useMemo(()=>{
     if(!selected||cardKind==="cafe")return selected;
     const item=selected[cardKind]||{};
@@ -361,7 +362,7 @@ export default function CreatorStudioV2(){
         <button className="cv2-back" onClick={()=>{setView("library");setSearch("")}}>← My reviews</button>
         <div className="cv2-savebar"><div><b>{reviewState(selected)}</b><small>{JSON.stringify(selected)===saved[selected.id]?"Saved":"Unsaved inputs"}</small></div><button disabled={publishing||uploading} onClick={()=>persist("save")}>Save draft</button><button className="primary" disabled={publishing||uploading} onClick={()=>persist("publish")}>Publish café</button></div>
         <div className="cv2-title"><div><p>{selected.visitedOn||"Draft review"}</p><h2>{selected.name}</h2></div><strong>{score(selected)||"–"}<small>/100</small></strong></div>
-        <div className="cv2-review-summary">{cover?<img src={cover} alt={selected.name}/>:<button onClick={()=>setTab("photos")}>＋ Add a cover photo</button>}<div><p>{selected.city} · {selected.catalogId?"Top 50 café":"Your discovery"}</p><p>{selected.take||selected.reason||"Add your verdict to bring this review to life."}</p><div className="cv2-summary-scores"><span>Drink <b>{category10(selected.drink)}/10</b></span><span>Pastry <b>{category10(selected.pastry)}/10</b></span></div></div></div>
+        <div className="cv2-review-summary">{cover?<img src={cover} alt={selected.name}/>:<button onClick={()=>setTab("photos")}>＋ Add a cover photo</button>}<div><p>{selected.city} · {selected.catalogId?"Top 50 café":"Your discovery"}</p><p>{selected.take||selected.reason||"Add your verdict to bring this review to life."}</p><div className="cv2-summary-scores"><span>Drink <b>{category10(selected.drink)}/10</b></span>{selected.pastry?.enabled!==false&&selected.pastry?.type&&<span>Pastry <b>{category10(selected.pastry)}/10</b></span>}</div></div></div>
         <details className="cv2-manage"><summary>Manage this review</summary><p>Reset clears the draft’s ratings, notes and photos. Remove deletes the draft and published review. Unpublish keeps a private draft.</p><button onClick={()=>manageReview("reset")}>Reset review data</button><button disabled={publishing} onClick={()=>manageReview("remove")}>Remove review</button>{published[selected.id]&&<button disabled={publishing} onClick={()=>{if(window.confirm("Remove this review from the public guide and keep it as a private draft?"))persist("unpublish")}}>Unpublish café</button>}</details>
         <div className="cv2-tabs"><button className={tab==="review"?"active":""} onClick={()=>setTab("review")}>1 · Review</button><button className={tab==="photos"?"active":""} onClick={()=>setTab("photos")}>2 · Photos ({photos.length})</button><button className={tab==="social"?"active":""} onClick={()=>setTab("social")}>3 · Instagram</button></div>
 
@@ -386,10 +387,14 @@ export default function CreatorStudioV2(){
           <div className="cv2-ratings">{DRINK_CRITERIA.map(label=><RatingSlider key={label} label={label} value={selected.drink?.ratings?.[label]} onChange={v=>rate("drink",label,v)}/>)}</div>
 
           <div className="section-head divided"><div><p className="cv2-eyebrow">The bite</p><h3>Pastry</h3></div><span>0 means not tasted.</span></div>
+          <label className="cv2-pastry-toggle"><input type="checkbox" checked={selected.pastry?.enabled!==false} onChange={e=>{nested("pastry","enabled",e.target.checked);if(!e.target.checked&&cardKind==="pastry")setCardKind("cafe")}}/> Include pastry review</label>
+          {selected.pastry?.enabled===false&&<p>Drink-only visit. Pastry is hidden from the app and cards and does not affect the score. Saved pastry details are kept.</p>}
+          {selected.pastry?.enabled!==false&&<>
           <div className="cv2-fields"><TypePicker key={selected.id+"pastry"} kind="pastry" value={selected.pastry?.type||""} onChange={v=>nested("pastry","type",v)}/><label>Detail<input value={selected.pastry?.subtype||""} onChange={e=>nested("pastry","subtype",e.target.value)}/></label><label>Price<input type="number" value={selected.pastry?.price||0} onChange={e=>nested("pastry","price",Number(e.target.value))}/></label><label className="wide">Tasting note<textarea value={selected.pastry?.note||""} onChange={e=>nested("pastry","note",e.target.value)}/></label></div>
           <CategoryPhoto kind="pastry" category={selected.pastry} uploading={uploading} onUpload={e=>uploadCategory(e,"pastry")} onRemove={()=>nested("pastry","photo","")}/>
           <div className="cv2-ratings">{PASTRY_CRITERIA.map(label=><RatingSlider key={label} label={label} value={selected.pastry?.ratings?.[label]} onChange={v=>rate("pastry",label,v)}/>)}</div>
 
+          </>}
           <div className="section-head divided"><div><p className="cv2-eyebrow">The whole fika</p><h3>Experience</h3></div></div>
           <div className="cv2-ratings"><RatingSlider label="Atmosphere" value={selected.atmosphere} onChange={v=>patch("atmosphere",v)}/><RatingSlider label="Service" value={selected.service} onChange={v=>patch("service",v)}/><RatingSlider label="Value" value={selected.value} onChange={v=>patch("value",v)}/></div>
 
@@ -405,7 +410,7 @@ export default function CreatorStudioV2(){
 
         {tab==="social"&&<div className="cv2-card social-card-editor">
           <div className="section-head"><div><p className="cv2-eyebrow">Instagram</p><h3>Your finished Fika card</h3></div><span>Choose a format, frame your photo with your fingers, then download your card.</span></div>
-          <div className="format-toggle card-kind">{[["cafe","🏡 Café card"],["drink","☕ Drink card"],["pastry","🥐 Pastry card"]].map(([kind,label])=><button key={kind} className={cardKind===kind?"active":""} disabled={kind!=="cafe"&&!selected[kind]?.type} onClick={()=>setCardKind(kind)}>{label}</button>)}</div>
+          <div className="format-toggle card-kind">{[["cafe","🏡 Café card"],["drink","☕ Drink card"],["pastry","🥐 Pastry card"]].filter(([kind])=>kind!=="pastry"||(selected.pastry?.enabled!==false&&selected.pastry?.type)).map(([kind,label])=><button key={kind} className={cardKind===kind?"active":""} disabled={kind!=="cafe"&&!selected[kind]?.type} onClick={()=>setCardKind(kind)}>{label}</button>)}</div>
           {cardKind!=="cafe"&&<CategoryPhoto kind={cardKind} category={selected[cardKind]} uploading={uploading} onUpload={e=>uploadCategory(e,cardKind)} onRemove={()=>nested(cardKind,"photo","")}/>}
           <div className="format-toggle"><button className={format==="post"?"active":""} onClick={()=>setFormat("post")}>Post · 1080×1350</button><button className={format==="story"?"active":""} onClick={()=>setFormat("story")}>Story · 1080×1920</button></div>
           <div className="card-edit-grid">
