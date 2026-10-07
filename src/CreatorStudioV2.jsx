@@ -17,7 +17,7 @@ function blankRatings(list){return Object.fromEntries(list.map(x=>[x,0]))}
 
 function newCafe(catalogCafe){
   return {
-    id:Date.now(),
+    id:crypto.randomUUID(),
     catalogId:catalogCafe?.id||"",
     name:catalogCafe?.name||"New café",
     address:catalogCafe?.address||"",
@@ -59,14 +59,14 @@ function wrap(ctx,text,maxWidth,maxLines){
   return lines;
 }
 
-async function exportCard(cafe,format){
+async function renderCard(cafe,format){
   const isStory=format==="story";
   const W=1080,H=isStory?1920:1350;
   const p=62;
   const heroH=Math.round(H*(isStory?.47:.51));
   const canvas=document.createElement("canvas");
   canvas.width=W;canvas.height=H;
-  const ctx=canvas.getContext("2d");
+  let ctx=canvas.getContext("2d");
 
   ctx.fillStyle="#fbf5e9";
   ctx.fillRect(0,0,W,H);
@@ -105,20 +105,22 @@ async function exportCard(cafe,format){
 
   const sc=score10(cafe);
   const badgeR=isStory?105:95;
-  const bx=W-p-badgeR,by=heroH-badgeR+6;
+  const bx=W-p-badgeR,by=heroH-badgeR-24;
   ctx.fillStyle="#fffaf2";ctx.beginPath();ctx.arc(bx,by,badgeR,0,Math.PI*2);ctx.fill();
   ctx.strokeStyle="#c39a4a";ctx.lineWidth=5;ctx.stroke();
   ctx.strokeStyle="#e5c987";ctx.lineWidth=2;ctx.beginPath();ctx.arc(bx,by,badgeR-10,0,Math.PI*2);ctx.stroke();
   ctx.fillStyle="#2c211b";ctx.textAlign="center";ctx.font=`600 ${isStory?84:74}px Georgia`;ctx.fillText(sc,bx,by+18);
   ctx.fillStyle="#a27c3d";ctx.font="800 17px Arial";ctx.fillText("FIKA SCORE",bx,by+54);ctx.textAlign="left";
 
-  let y=heroH+86;
+  const heroCtx=ctx;
+  const paper=document.createElement("canvas");paper.width=W;paper.height=1800;ctx=paper.getContext("2d");
+  let y=70;
   ctx.fillStyle="#9b7a43";ctx.font="800 18px Arial";
   ctx.fillText("WORTH THE FIKA",p,y);y+=62;
 
   ctx.fillStyle="#2b211c";ctx.font=`600 ${isStory?78:70}px Georgia`;
   const titleLines=wrap(ctx,cafe.name,W-p*2,isStory?2:2);
-  for(const line of titleLines){ctx.fillText(line,p,y);y+=isStory?86:76}
+  for(const line of titleLines){ctx.fillText(line,p,y,W-p*2);y+=isStory?86:76}
   y+=16;
 
   if(score(cafe)>=80){
@@ -150,11 +152,11 @@ async function exportCard(cafe,format){
     if(!title)return;
     ctx.fillStyle="#f0e4d5";ctx.beginPath();ctx.arc(p+26,y+22,26,0,Math.PI*2);ctx.fill();
     ctx.font="26px Arial";ctx.fillStyle="#2d231e";ctx.fillText(emoji,p+11,y+31);
-    ctx.font="600 29px Georgia";ctx.fillText(title,p+70,y+23);
+    ctx.font="600 29px Georgia";ctx.fillText(title,p+70,y+23,W-p*2-175);
     if(detail){
       ctx.font="400 18px Arial";ctx.fillStyle="#7d7168";
       const clean=String(detail).slice(0,72);
-      ctx.fillText(clean,p+70,y+50);
+      ctx.fillText(clean,p+70,y+50,W-p*2-175);
     }
     ctx.textAlign="right";ctx.fillStyle="#b5573d";ctx.font="700 34px Georgia";ctx.fillText(rating,W-p,y+30);ctx.textAlign="left";
     ctx.strokeStyle="#ece1d4";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(p,y+71);ctx.lineTo(W-p,y+71);ctx.stroke();
@@ -168,6 +170,11 @@ async function exportCard(cafe,format){
   y+=20;ctx.fillStyle="#4f4037";ctx.font=`500 ${isStory?30:27}px Georgia`;
   for(const line of wrap(ctx,verdict,W-p*2,isStory?4:3)){ctx.fillText(line,p,y);y+=isStory?42:38}
 
+  const contentHeight=y+30;
+  ctx=heroCtx;
+  const available=H-heroH-135;
+  const fit=Math.min(1,available/contentHeight);
+  ctx.drawImage(paper,0,0,W,contentHeight,(W-W*fit)/2,heroH+12,W*fit,contentHeight*fit);
   const footer=H-55;
   ctx.strokeStyle="#d8c7ad";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p,footer-52);ctx.lineTo(W-p,footer-52);ctx.stroke();
   ctx.fillStyle="#a88345";ctx.font="800 19px Arial";ctx.fillText("✦  FIKA REVIEWS",p,footer);
@@ -175,6 +182,11 @@ async function exportCard(cafe,format){
 
   const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/png",1));
   if(!blob)throw new Error("card_failed");
+  return blob;
+}
+async function exportCard(cafe,format){
+  const isStory=format==="story";
+  const blob=await renderCard(cafe,format);
   const u=URL.createObjectURL(blob),a=document.createElement("a");
   a.href=u;a.download=String(cafe.name||"fika").toLowerCase().replace(/[^a-z0-9]+/g,"-")+"-"+(isStory?"story":"post")+".png";
   document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500);
@@ -184,9 +196,25 @@ function caption(cafe){
   return [cafe.name+" · "+(cafe.city||""),"Worth the Fika score: "+score(cafe)+"/100",cafe.take||cafe.reason||"",cafe.drink?.type?"☕ "+cafe.drink.type:"",cafe.pastry?.type?"🥐 "+cafe.pastry.type:"","",tags+" #WorthTheFika #Fika"].join("\n");
 }
 
+function CardPreview({cafe,format}){
+  const [url,setUrl]=useState("");
+  useEffect(()=>{let cancelled=false,objectUrl;setUrl("");const timer=setTimeout(()=>{renderCard(cafe,format).then(blob=>{if(cancelled)return;objectUrl=URL.createObjectURL(blob);setUrl(objectUrl)}).catch(()=>{if(!cancelled)setUrl("error")})},150);return()=>{cancelled=true;clearTimeout(timer);if(objectUrl)URL.revokeObjectURL(objectUrl)}},[cafe,format]);
+  return url&&url!=="error"?<img className={"cv2-card-image "+format} src={url} alt={"Instagram card preview for "+cafe.name}/>:<div className="cv2-preview-loading" role="status">{url==="error"?"Preview unavailable. Try downloading the card.":"Preparing your card…"}</div>;
+}
+
 export default function CreatorStudioV2(){
   const [cafes,setCafes]=useState([]);
   const [catalog,setCatalog]=useState([]);
+  const [view,setView]=useState("library");
+  const [search,setSearch]=useState("");
+  const [city,setCity]=useState("Copenhagen");
+  const [loaded,setLoaded]=useState(false);
+  const [loadError,setLoadError]=useState(false);
+  const [saved,setSaved]=useState("[]");
+  const [publishing,setPublishing]=useState(false);
+  const [undo,setUndo]=useState(null);
+  const dirty=loaded&&JSON.stringify(cafes)!==saved;
+  useEffect(()=>{if(!dirty)return;const warn=e=>{e.preventDefault();e.returnValue=""};window.addEventListener("beforeunload",warn);return()=>window.removeEventListener("beforeunload",warn)},[dirty]);
   const [selectedId,setSelectedId]=useState(null);
   const [code,setCode]=useState("");
   const [ready,setReady]=useState(false);
@@ -205,7 +233,10 @@ export default function CreatorStudioV2(){
     (async()=>{
       try{
         const [revRes,cphRes,stoRes]=await Promise.all([fetch(API),fetch("/copenhagen50.json"),fetch("/stockholm50.json")]);
-        const rev=revRes.ok?await revRes.json():[];
+        if(!revRes.ok||!cphRes.ok||!stoRes.ok)throw new Error("load_failed");
+        const rev=await revRes.json();
+        if(!Array.isArray(rev))throw new Error("bad_reviews");
+        setSaved(JSON.stringify(rev));
         const cph=await cphRes.json();
         const sto=await stoRes.json();
         if(cancelled)return;
@@ -217,14 +248,15 @@ export default function CreatorStudioV2(){
         let next=Array.isArray(rev)?rev:[];
         const requested=new URLSearchParams(window.location.search).get("cafe");
         if(requested){
+          setView("editor");
           const item=combined.find(c=>c.id===requested);
           const existing=next.find(r=>r.catalogId===requested || normalize(r.name)===normalize(item?.name||"") || (item?.aliases||[]).some(a=>normalize(a)===normalize(r.name)));
           if(existing)setSelectedId(existing.id);
           else if(item){const created=newCafe(item);next=[created,...next];setSelectedId(created.id);setStatus(`New review started from ${item.city} 50`)}
         }
         if(!selectedId&&!requested)setSelectedId(next?.[0]?.id||null);
-        setCafes(next);
-      }catch{setCafes([])}
+        setCafes(next);setLoaded(true);
+      }catch{setLoadError(true)}
     })();
     return()=>{cancelled=true};
   },[]);
@@ -240,19 +272,31 @@ export default function CreatorStudioV2(){
   function rate(group,label,value){if(!selected)return;setCafes(list=>list.map(c=>c.id===selected.id?{...c,[group]:{...(c[group]||{}),ratings:{...(c[group]?.ratings||{}),[label]:value}}}:c))}
 
   function add(customCatalog){
-    const c=newCafe(customCatalog);setCafes(list=>[c,...list]);setSelectedId(c.id);setTab("review");setStatus(customCatalog?"Shortlist café loaded":"New review ready");
+    if(customCatalog){const existing=cafes.find(c=>c.catalogId===customCatalog.id||normalize(c.name)===normalize(customCatalog.name));if(existing){openReview(existing);return}}
+    setView("editor");setSearch("");const c=newCafe(customCatalog);setCafes(list=>[c,...list]);setSelectedId(c.id);setTab("review");setStatus(customCatalog?"Shortlist café loaded":"New review ready");
   }
 
+  function openReview(c){setSelectedId(c.id);setTab("review");setView("editor");window.scrollTo(0,0)}
+  function manageReview(action){
+    const removing=action==="remove";
+    if(!window.confirm(removing?`Remove ${selected.name} from your reviews? The Top 50 listing stays. Publish to apply this change.`:`Reset ratings, notes and photos for ${selected.name}? Café details stay. Publish to apply this change.`))return;
+    setUndo(cafes);
+    if(removing){setCafes(list=>list.filter(c=>c.id!==selected.id));setSelectedId(null);setView("library")}
+    else{const blank=newCafe();setCafes(list=>list.map(c=>c.id===selected.id?{...c,drink:blank.drink,pastry:blank.pastry,atmosphere:0,service:0,value:0,bestFor:[],take:"",reason:"",scene:"",visitedOn:"",imgs:[],cardZoom:1,cardX:0,cardY:0}:c));setTab("review")}
+    setStatus(removing?"Review removed · publish to update the guide":"Review reset · publish to update the guide");
+  }
   function linkCatalog(catalogId){
+    if(!catalogId){patch("catalogId","");return}
     const item=catalog.find(c=>c.id===catalogId);if(!item)return;
     setCafes(list=>list.map(c=>c.id===selected.id?{...c,catalogId:item.id,name:item.name,address:item.address,city:item.city||"Copenhagen",country:item.country||"Denmark"}:c));
     setStatus(`Linked to ${item.city||"Copenhagen"} 50`);
   }
 
   async function publish(){
-    setStatus("Publishing…");
-    try{const r=await fetch(API,{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({cafes})});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"failed");setStatus("Published ✓");setTimeout(()=>setStatus(""),2500)}
-    catch(e){if(e.message==="unauthorized")setReady(false);setStatus(e.message==="unauthorized"?"Session expired. Please sign in again.":"Publish failed")}
+    if(!loaded||publishing||uploading)return;
+    const snapshot=JSON.stringify(cafes);setPublishing(true);setStatus("Publishing…");
+    try{const r=await fetch(API,{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({cafes})});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"failed");setSaved(snapshot);setUndo(null);setStatus("Published ✓");setTimeout(()=>setStatus(""),2500)}
+    catch(e){if(e.message==="unauthorized")setReady(false);setStatus(e.message==="unauthorized"?"Session expired. Please sign in again.":"Publish failed — your changes are still here")}finally{setPublishing(false)}
   }
 
   async function upload(event){
@@ -266,24 +310,33 @@ export default function CreatorStudioV2(){
   if(checkingSession)return <main className="cv2-login"><p>Opening Creator Studio…</p></main>;
   if(!ready)return <main className="cv2-login"><form onSubmit={e=>{e.preventDefault();loginWith(code,true)}}>{mark()}<p className="cv2-eyebrow">Private creator studio</p><h1>Rate your next fika.</h1><p>Choose a café from the Copenhagen or Stockholm Top 50, or add your own. Upload photos, score the tasting and create the Instagram post.</p><input type="password" value={code} onChange={e=>setCode(e.target.value)} placeholder="Admin code" aria-label="Admin code" name="password" autoComplete="current-password" autoFocus/><label className="cv2-remember"><input type="checkbox" checked={remember} onChange={e=>setRemember(e.target.checked)}/>Remember this device for 90 days</label>{status&&<small>{status}</small>}<button>Open Creator Studio</button><a href="/">Back to public guide</a></form></main>;
 
-  if(!selected)return <main className="cv2-empty">{mark()}<h1>No published reviews yet.</h1><p>Start with a researched Copenhagen or Stockholm café, or add a custom place.</p><div className="cv2-empty-actions"><button onClick={()=>add()}>+ Custom café</button>{catalog.slice(0,6).map(item=><button key={item.id} className="secondary-empty" onClick={()=>add(item)}>#{item.rank} · {item.name}</button>)}</div></main>;
+  if(loadError)return <main className="cv2-empty"><h1>Could not load your reviews.</h1><p>Please reload before editing so your saved reviews stay safe.</p><button onClick={()=>window.location.reload()}>Try again</button></main>;
+  if(!loaded)return <main className="cv2-empty"><p>Loading your reviews…</p></main>;
 
-  const photos=Array.isArray(selected.imgs)?selected.imgs:[];
+  const photos=Array.isArray(selected?.imgs)?selected.imgs:[];
   const cover=photos[0];
-  const zoom=Number(selected.cardZoom)||1,x=Number(selected.cardX)||0,y=Number(selected.cardY)||0;
+  const zoom=Number(selected?.cardZoom)||1,x=Number(selected?.cardX)||0,y=Number(selected?.cardY)||0;
 
   return <main className="cv2-shell">
-    <header className="cv2-header"><div>{mark()}<div><span>CREATOR STUDIO</span><h1>Worth the Fika</h1></div></div><nav><small>{status}</small><a href="/">Public guide</a><button onClick={async()=>{try{const r=await fetch("/api/admin-check",{method:"DELETE",credentials:"same-origin"});if(!r.ok)throw new Error();setCode("");setReady(false);setStatus("")}catch{setStatus("Could not log out. Please try again.")}}}>Log out</button><button className="primary" onClick={publish}>Publish all</button></nav></header>
-    <div className="cv2-layout">
-      <aside className="cv2-sidebar">
-        <button className="new" onClick={()=>add()}>+ New custom café</button>
-        <details className="quick-add"><summary>+ From Copenhagen 50</summary><div>{catalog.filter(item=>item.city==="Copenhagen"&&!cafes.some(r=>r.catalogId===item.id)).slice(0,50).map(item=><button key={item.id} onClick={()=>add(item)}><b>#{item.rank} {item.name}</b><span>{item.address}</span></button>)}</div></details>
-        <details className="quick-add"><summary>+ From Stockholm 50</summary><div>{catalog.filter(item=>item.city==="Stockholm"&&!cafes.some(r=>r.catalogId===item.id)).slice(0,50).map(item=><button key={item.id} onClick={()=>add(item)}><b>#{item.rank} {item.name}</b><span>{item.address}</span></button>)}</div></details>
-        <div className="review-list">{cafes.map(c=><button className={c.id===selected.id?"active":""} key={c.id} onClick={()=>{setSelectedId(c.id);setTab("review")}}><b>{c.name}</b><span>{c.city||"No city"} · {score(c)||"–"}/100</span></button>)}</div>
-      </aside>
+    <header className="cv2-header"><div>{mark()}<div><span>CREATOR STUDIO</span><h1>Worth the Fika</h1></div></div><nav><small>{status}</small><a href="/">Public guide</a><button onClick={async()=>{try{const r=await fetch("/api/admin-check",{method:"DELETE",credentials:"same-origin"});if(!r.ok)throw new Error();setCode("");setReady(false);setStatus("")}catch{setStatus("Could not log out. Please try again.")}}}>Log out</button><button className="primary" disabled={!dirty||publishing||uploading} onClick={publish}>{publishing?"Publishing…":"Publish changes"}</button></nav></header>
+    <div className="cv2-notice" role="status"><span>{status|| (dirty?"Unpublished changes · publish when ready":"All changes published")}</span>{undo&&<button onClick={()=>{setCafes(undo);setUndo(null);setStatus("Change undone")}}>Undo</button>}</div>
+    {view!=="editor"?<section className="cv2-library">
+      <div className="cv2-library-heading"><div><p className="cv2-eyebrow">Your café journal</p><h2>{view==="add"?"Add a café":"My reviews"}</h2><p>{cafes.length} cafés · open a review to edit, add photos or create an Instagram card.</p></div><button className="primary" onClick={()=>{setView(view==="add"?"library":"add");setSearch("")}}>{view==="add"?"← My reviews":"+ Add café"}</button></div>
+      {view==="add"&&<div className="cv2-add-options"><button onClick={()=>add()}><b>＋ A café outside the Top 50</b><span>Start with a name and add your own details.</span></button><h3>Choose from the Top 50</h3><div className="format-toggle">{["Copenhagen","Stockholm"].map(c=><button key={c} className={city===c?"active":""} onClick={()=>setCity(c)}>{c}</button>)}</div></div>}
+      <input className="cv2-search" type="search" aria-label="Search cafés" placeholder={view==="add"?"Search the Top 50…":"Search your reviews…"} value={search} onChange={e=>setSearch(e.target.value)}/>
+      <div className="cv2-review-grid">{(view==="add"?catalog.filter(c=>c.city===city):cafes).filter(c=>normalize(c.name+" "+c.city).includes(normalize(search))).map(c=>{
+        const existing=view==="add"?cafes.find(r=>r.catalogId===c.id||normalize(r.name)===normalize(c.name)):c;
+        return <button className="cv2-review-tile" key={c.id} onClick={()=>existing?openReview(existing):add(c)}><div className="cv2-tile-photo">{existing?.imgs?.[0]?<img src={existing.imgs[0]} alt=""/>:<span>{initials(c.name)}</span>}<em>{existing?`${score(existing)||"–"}/100`:`#${c.rank}`}</em></div><div className="cv2-tile-copy"><h3>{c.name}</h3><p>{c.city} · {existing?`${existing.imgs?.length||0} photos`:c.address}</p>{existing&&<p className="cv2-tile-verdict">{existing.take||existing.reason||"Add your tasting notes and verdict"}</p>}<strong>{existing?"Open review →":"Start review +"}</strong></div></button>
+      })}</div>
+      {view==="library"&&!cafes.length&&<div className="cv2-card"><h3>Your first fika starts here.</h3><p>Tap Add café to choose a Top 50 café or add your own discovery.</p></div>}
+      {search&&!(view==="add"?catalog.filter(c=>c.city===city):cafes).some(c=>normalize(c.name+" "+c.city).includes(normalize(search)))&&<p>No cafés match your search.</p>}
+    </section>:selected&&<div className="cv2-layout">
       <section className="cv2-content">
+        <button className="cv2-back" onClick={()=>{setView("library");setSearch("")}}>← My reviews</button>
         <div className="cv2-title"><div><p>{selected.visitedOn||"Draft review"}</p><h2>{selected.name}</h2></div><strong>{score(selected)||"–"}<small>/100</small></strong></div>
-        <div className="cv2-tabs"><button className={tab==="review"?"active":""} onClick={()=>setTab("review")}>1 · Review</button><button className={tab==="photos"?"active":""} onClick={()=>setTab("photos")}>2 · Photos ({photos.length})</button><button className={tab==="social"?"active":""} onClick={()=>setTab("social")}>3 · Instagram card</button></div>
+        <div className="cv2-review-summary">{cover?<img src={cover} alt={selected.name}/>:<button onClick={()=>setTab("photos")}>＋ Add a cover photo</button>}<div><p>{selected.city} · {selected.catalogId?"Top 50 café":"Your discovery"}</p><p>{selected.take||selected.reason||"Add your verdict to bring this review to life."}</p><div className="cv2-summary-scores"><span>Coffee <b>{category10(selected.drink)}/10</b></span><span>Pastry <b>{category10(selected.pastry)}/10</b></span></div></div></div>
+        <details className="cv2-manage"><summary>Manage this review</summary><p>Reset clears ratings, notes and photos, keeping café details. Remove deletes this review. Publish to apply either change.</p><button onClick={()=>manageReview("reset")}>Reset review data</button><button onClick={()=>manageReview("remove")}>Remove review</button></details>
+        <div className="cv2-tabs"><button className={tab==="review"?"active":""} onClick={()=>setTab("review")}>1 · Review</button><button className={tab==="photos"?"active":""} onClick={()=>setTab("photos")}>2 · Photos ({photos.length})</button><button className={tab==="social"?"active":""} onClick={()=>setTab("social")}>3 · Instagram</button></div>
 
         {tab==="review"&&<div className="cv2-card">
           <div className="section-head"><div><p className="cv2-eyebrow">The place</p><h3>Café details</h3></div><span>Link to the shortlist to get the right branch and map location.</span></div>
@@ -323,25 +376,7 @@ export default function CreatorStudioV2(){
           <div className="section-head"><div><p className="cv2-eyebrow">Instagram</p><h3>Your finished Fika card</h3></div><span>Post is the default. Story uses the same visual language in 9:16.</span></div>
           <div className="format-toggle"><button className={format==="post"?"active":""} onClick={()=>setFormat("post")}>Post · 1080×1350</button><button className={format==="story"?"active":""} onClick={()=>setFormat("story")}>Story · 1080×1920</button></div>
           <div className="card-edit-grid">
-            <div className={format==="story"?"ig-preview editorial story":"ig-preview editorial post"}>
-              <div className="ig-image-wrap">
-                {cover?<img src={cover} alt="" style={{transform:`translate(${x*.22}%,${y*.22}%) scale(${zoom})`}}/>:<div className="ig-fallback">{initials(selected.name)}</div>}
-                <span className="ig-location">⌖ {selected.city}{selected.country?", "+selected.country:""}</span>
-                {selected.scene&&<span className="ig-scene">☀ {selected.scene}</span>}
-                <div className="ig-score"><strong>{score10(selected)}</strong><small>FIKA SCORE</small></div>
-              </div>
-              <div className="ig-paper">
-                <span className="ig-kicker">WORTH THE FIKA</span>
-                <h4>{selected.name}</h4>
-                {score(selected)>=80&&<span className="ig-worth">✓ WORTH THE TRIP</span>}
-                <div className="ig-tags">{(selected.bestFor||[]).slice(0,3).map(tag=><span key={tag}>{tag}</span>)}</div>
-                <p className="ig-section-label">TASTING HIGHLIGHTS</p>
-                {selected.drink?.type&&<div className="ig-taste-row"><span>☕</span><div><b>{selected.drink.type}</b><small>{selected.drink.note||selected.drink.mod}</small></div><strong>{category10(selected.drink)}</strong></div>}
-                {selected.pastry?.type&&<div className="ig-taste-row"><span>🥐</span><div><b>{selected.pastry.type}</b><small>{selected.pastry.note||selected.pastry.subtype}</small></div><strong>{category10(selected.pastry)}</strong></div>}
-                <p className="ig-verdict">{selected.reason||selected.take||"Add your verdict in the Review tab."}</p>
-                <div className="ig-footer"><span>✦ FIKA REVIEWS</span><b>@WorthTheFika</b></div>
-              </div>
-            </div>
+            <CardPreview cafe={selected} format={format}/>
             <aside className="crop-controls">
               <h4>Frame the hero photo</h4>
               <p>Zoom in or out and move the image until the coffee, pastry or room sits exactly where you want it.</p>
@@ -354,8 +389,9 @@ export default function CreatorStudioV2(){
           </div>
           <div className="caption-panel"><pre>{caption(selected)}</pre><button onClick={async()=>{await navigator.clipboard.writeText(caption(selected));setStatus("Caption copied ✓")}}>Copy caption</button></div>
         </div>}
-        <footer className="cv2-footer"><span>Changes stay private until you press <b>Publish all</b>.</span><div><button onClick={()=>setTab(tab==="review"?"photos":tab==="photos"?"social":"review")}>{tab==="review"?"Next: photos":tab==="photos"?"Next: Instagram":"Back to review"}</button><button className="primary" onClick={publish}>Publish all</button></div></footer>
+        <footer className="cv2-footer"><span>Changes stay private until you press <b>Publish changes</b>.</span><div><button onClick={()=>setTab(tab==="review"?"photos":tab==="photos"?"social":"review")}>{tab==="review"?"Next: photos":tab==="photos"?"Next: Instagram":"Back to review"}</button><button className="primary" disabled={!dirty||publishing||uploading} onClick={publish}>{publishing?"Publishing…":"Publish changes"}</button></div></footer>
       </section>
-    </div>
+    </div>}
   </main>;
 }
+
