@@ -1391,3 +1391,9 @@ button,a{-webkit-tap-highlight-color:transparent}
 
 /* A single fill communicates the score; the emoji belongs to its label. */
 .tasting-criteria .emoji-score{display:block;min-height:16px;height:16px;padding:0;width:100%;}
+
+/* Keep a real-width track even when the marker is its only child. */
+.tasting-criteria>div{grid-template-columns:minmax(105px,.9fr) minmax(100px,1.4fr);gap:18px;min-height:34px}
+.tasting-criteria .emoji-score{position:relative;display:block;width:100%;height:10px;min-height:10px;padding:0;overflow:visible}
+.emoji-score .score-marker{position:absolute;top:50%;transform:translate(-50%,-50%);font-size:24px;line-height:1;white-space:nowrap}
+@media(max-width:380px){.tasting-criteria>div{grid-template-columns:minmax(85px,.9fr) minmax(80px,1.4fr);gap:12px}}

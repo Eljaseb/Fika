@@ -345,7 +345,7 @@ function categoryHasData(category) {
 
 function EmojiScore({value,emoji="⭐",max=5}){
   const n=Math.max(0,Math.min(max,Number(value)||0));
-  return <span className="emoji-score" style={{background:`linear-gradient(to right,#a9bd8c ${n/max*100}%,#e8dfd0 ${n/max*100}%)`}} role="img" aria-label={n?`${n} out of ${max}`:"Not rated"}/>;
+  return <span className="emoji-score" style={{background:`linear-gradient(to right,#a9bd8c ${n/max*100}%,#e8dfd0 ${n/max*100}%)`}} role="img" aria-label={n?`${n} out of ${max}`:"Not rated"}><span className="score-marker" aria-hidden="true" style={{left:`clamp(12px, ${n/max*100}%, calc(100% - 12px))`}}>{emoji}</span></span>;
 }
 
 function CafeLocationMap({cafe,review,city}) {
@@ -451,7 +451,7 @@ function Detail({cafe,review,onClose,city}) {
             <div className="tasting-criteria">{ratingEntries(review[tasting]).map(([label,value])=><div key={label}><span>{criterionLabel(label)}</span><EmojiScore value={value} emoji={ratingEmoji(label)}/></div>)}</div>
             {!ratingEntries(review[tasting]).length&&<p>No individual ratings added yet.</p>}
           </section>}
-          {tasting==="overall"&&<section ref={tastingRef} className="tasting-breakdown" aria-label="Overall score breakdown"><h3>⭐ Overall experience</h3><p>The tasting contributes 72% and atmosphere, service and value contribute 28% when both are rated.</p><div className="tasting-criteria">{[["Drink",categoryAverage(review.drink)],["Pastry",categoryAverage(review.pastry)],["Atmosphere",review.atmosphere],["Service",review.service],["Value",review.value]].filter(([,value])=>Number(value)>0).map(([label,value])=><div key={label}><span>{label==="Drink"?"☕ Drink":label==="Pastry"?"🥐 Pastry":criterionLabel(label)}</span><EmojiScore value={value}/></div>)}</div></section>}
+          {tasting==="overall"&&<section ref={tastingRef} className="tasting-breakdown" aria-label="Overall score breakdown"><h3>⭐ Overall experience</h3><p>The tasting contributes 72% and atmosphere, service and value contribute 28% when both are rated.</p><div className="tasting-criteria">{[["Drink",categoryAverage(review.drink)],["Pastry",categoryAverage(review.pastry)],["Atmosphere",review.atmosphere],["Service",review.service],["Value",review.value]].filter(([,value])=>Number(value)>0).map(([label,value])=><div key={label}><span>{label==="Drink"?"☕ Drink":label==="Pastry"?"🥐 Pastry":criterionLabel(label)}</span><EmojiScore value={value} emoji={label==="Drink"?"☕️":label==="Pastry"?"🥐":ratingEmoji(label)}/></div>)}</div></section>}
           {(review.reason || review.take) && <p className="detail-verdict">{review.reason || review.take}</p>}
         </> : <>
           <p className="detail-verdict">{cafe.why}</p>

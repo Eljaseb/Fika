@@ -64,7 +64,12 @@ function wrap(ctx,text,maxWidth,maxLines){
 }
 function drawEmojiBar(ctx,value,emoji,x,y,width,height){
   const amount=Math.max(0,Math.min(5,Number(value)||0));
-  ctx.save();ctx.fillStyle="#e8dfd0";ctx.beginPath();ctx.roundRect(x,y,width,height,height/2);ctx.fill();if(amount){ctx.save();ctx.beginPath();ctx.roundRect(x,y,width,height,height/2);ctx.clip();ctx.fillStyle="#a9bd8c";ctx.fillRect(x,y,width*amount/5,height);ctx.restore()}
+  ctx.save();const trackH=height*.28,trackY=y+(height-trackH)/2;
+  ctx.fillStyle="#e8dfd0";ctx.beginPath();ctx.roundRect(x,trackY,width,trackH,trackH/2);ctx.fill();
+  if(amount){ctx.save();ctx.beginPath();ctx.roundRect(x,trackY,width,trackH,trackH/2);ctx.clip();ctx.fillStyle="#7f986a";ctx.fillRect(x,trackY,width*amount/5,trackH);ctx.restore()}
+  const markerX=x+Math.max(height*.45,Math.min(width-height*.45,width*amount/5));
+  ctx.font=`${height*.85}px "Apple Color Emoji","Segoe UI Emoji",Arial`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(emoji,markerX,y+height/2);
+
   ctx.restore();
 }
 async function renderCard(cafe,format,raw=false){
@@ -110,18 +115,25 @@ async function renderCard(cafe,format,raw=false){
       if(item.note){y+=50*scale;ctx.font=`bold ${32*scale}px Georgia`;for(const line of wrap(ctx,item.note,W-p*2,story?4:3)){text(line,ctx.font,"#432618",p,y,W-p*2);y+=40*scale}}
       return y-heroH;
     }
-    if(score(cafe)>=80){if(paint)pill("WORTH THE TRIP",p,y,"#5d744f","white",22*scale,320);y+=65*scale}
+    if(score(cafe)>=80){if(paint)pill("WORTH THE TRIP",p,y,"#5d744f","white",22*scale,320);y+=48+28*scale}
     const tags=(cafe.bestFor||[]).slice(0,3).map(tagLabel).join("  ·  ");
     if(tags){y+=22*scale;text(tags,`bold ${25*scale}px Arial`,"#80634c",p,y,W-p*2);y+=26*scale}
     y+=22*scale;
     if(cafe.drink?.type||cafe.pastry?.type){text("THE TASTING",`bold ${23*scale}px Arial`,"#9c683d",p,y,W-p*2);y+=22*scale}
     for(const [label,category] of [["COFFEE",cafe.drink],["PASTRY",cafe.pastry]]){
       if(!category?.type)continue;
-      y+=(story?42:36)*scale;
-      text(foodEmoji(category.type,label==="PASTRY"?"pastry":"drink")+" "+category.type,`bold ${(story?46:40)*scale}px Georgia`,"#2c211b",p,y,W-p*2-280*scale);
-      if(paint)drawEmojiBar(ctx,Number(category10(category))/2,foodEmoji(category.type,label==="PASTRY"?"pastry":"drink"),W-p-260*scale,y-34*scale,260*scale,44*scale);
-      y+=34*scale;text("🏷️ "+priceLabel(category.price,cafe.country),`bold ${26*scale}px Arial`,"#72604e",p,y,W-p*2);
-      y+=24*scale;if(paint){ctx.strokeStyle="#ddcdb7";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p,y);ctx.lineTo(W-p,y);ctx.stroke()}
+      y+=48*scale;
+      const scoreWidth=150*scale,priceWidth=190*scale,gap=24*scale;
+      const nameWidth=W-p*2-scoreWidth-priceWidth-gap*2;
+      const nameFont=`bold ${38*scale}px Georgia`;ctx.font=nameFont;
+      const lines=wrap(ctx,foodEmoji(category.type,label==="PASTRY"?"pastry":"drink")+" "+category.type,nameWidth,3);
+      lines.forEach((line,i)=>text(line,nameFont,"#2c211b",p,y+i*46*scale,nameWidth));
+      if(paint)ctx.textAlign="right";
+      text(priceLabel(category.price,cafe.country),`bold ${26*scale}px Arial`,"#72604e",W-p-scoreWidth-gap,y,priceWidth);
+      text(category10(category)+"/10",`bold ${34*scale}px Georgia`,"#a65d40",W-p,y,scoreWidth);
+      if(paint)ctx.textAlign="left";
+      y+=(lines.length-1)*46*scale+30*scale;
+      if(paint){ctx.strokeStyle="#ddcdb7";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p,y);ctx.lineTo(W-p,y);ctx.stroke()}
     }
     const verdict=cafe.reason||cafe.take;
     if(verdict){y+=46*scale;ctx.font=`bold ${(story?38:34)*scale}px Georgia`;for(const line of wrap(ctx,verdict,W-p*2,story?4:3)){text(line,ctx.font,"#432618",p,y,W-p*2);y+=(story?47:42)*scale}}
