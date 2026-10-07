@@ -22,6 +22,7 @@ function cleanCategory(value) {
     cardX: Math.max(-100,Math.min(100,Number(v.cardX)||0)),
     cardY: Math.max(-100,Math.min(100,Number(v.cardY)||0)),
     cardRotation: Math.max(-360,Math.min(360,Number(v.cardRotation)||0)),
+    milk: cleanText(v.milk, 100),
     mod: cleanText(v.mod, 100),
     subtype: cleanText(v.subtype, 100),
     temp: cleanText(v.temp, 30),

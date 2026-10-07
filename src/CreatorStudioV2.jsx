@@ -1,4 +1,4 @@
-import {DRINKS,PASTRIES,TAGS,tagLabel,criterionLabel,foodEmoji,isCoffee,tastingMeta,ratingEmoji,reviewMonth,priceLabel,ratingEntries} from "./tasting.js";
+import {DRINKS,PASTRIES,MILKS,TAGS,tagLabel,criterionLabel,foodEmoji,isCoffee,tastingMeta,ratingEmoji,reviewMonth,priceLabel,ratingEntries} from "./tasting.js";
 
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import "./creator-v2.css";
@@ -152,10 +152,10 @@ function caption(cafe){
 }
 
 function TypePicker({kind,value,onChange}){
-  const options=kind==="drink"?DRINKS:PASTRIES;
+  const options=kind==="milk"?MILKS:kind==="drink"?DRINKS:PASTRIES;
   const match=options.find(x=>x.toLowerCase()===value.toLowerCase());
   const [custom,setCustom]=useState(Boolean(value&&!match));
-  return <><label>{kind==="drink"?"Drink type":"Pastry type"}<select value={custom?"custom":match||""} onChange={e=>{setCustom(e.target.value==="custom");onChange(e.target.value==="custom"?"":e.target.value)}}><option value="">Choose a {kind}</option>{options.map(o=><option key={o}>{o}</option>)}<option value="custom">＋ Other / custom {kind}</option></select></label>{custom&&<label>Custom {kind} name<input value={value} onChange={e=>onChange(e.target.value)} placeholder={kind==="drink"?"Your own drink":"Your own pastry"}/></label>}</>;
+  return <><label>{kind==="milk"?"Milk option":kind==="drink"?"Drink type":"Pastry type"}<select value={custom?"custom":match||""} onChange={e=>{setCustom(e.target.value==="custom");onChange(e.target.value==="custom"?"":e.target.value)}}><option value="">Choose a {kind}</option>{options.map(o=><option key={o}>{o}</option>)}<option value="custom">＋ Other / custom {kind}</option></select></label>{custom&&<label>Custom {kind} name<input value={value} onChange={e=>onChange(e.target.value)} placeholder={kind==="milk"?"e.g. Macadamia milk":kind==="drink"?"Your own drink":"Your own pastry"}/></label>}</>;
 }
 function CategoryPhoto({kind,category,uploading,onUpload,onRemove}){
   return <div className="cv2-category-photo">{category?.photo&&<img src={category.photo} alt={kind+" photo"}/>}<div><b>{foodEmoji(category?.type,kind)} {kind==="drink"?"Drink":"Pastry"} card photo</b><label><input type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" disabled={uploading} onChange={onUpload}/>{uploading?"Uploading…":"Choose a photo"}</label>{category?.photo&&<button disabled={uploading} onClick={onRemove}>Remove photo</button>}</div></div>;
@@ -380,7 +380,7 @@ export default function CreatorStudioV2(){
 
           <div className="cv2-tag-picks">{TAGS.map(tag=><button key={tag} aria-pressed={(selected.bestFor||[]).includes(tag)} onClick={()=>patch("bestFor",(selected.bestFor||[]).includes(tag)?selected.bestFor.filter(t=>t!==tag):[...(selected.bestFor||[]),tag])}>{tagLabel(tag)}</button>)}</div>
           <div className="section-head divided"><div><p className="cv2-eyebrow">The cup</p><h3>Drink</h3></div><span>0 means not tasted.</span></div>
-          <div className="cv2-fields"><TypePicker key={selected.id+"drink"} kind="drink" value={selected.drink?.type||""} onChange={v=>{nested("drink","type",v);if(!isCoffee(v))nested("drink","shots","")}}/><label>Detail<input value={selected.drink?.mod||""} onChange={e=>nested("drink","mod",e.target.value)} placeholder="Oat · single origin"/></label><label>Price<input type="number" value={selected.drink?.price||0} onChange={e=>nested("drink","price",Number(e.target.value))}/></label><label className="wide">Tasting note<textarea value={selected.drink?.note||""} onChange={e=>nested("drink","note",e.target.value)}/></label></div>
+          <div className="cv2-fields"><TypePicker key={selected.id+"drink"} kind="drink" value={selected.drink?.type||""} onChange={v=>{nested("drink","type",v);if(!isCoffee(v))nested("drink","shots","")}}/><TypePicker key={selected.id+"milk"} kind="milk" value={selected.drink?.milk||""} onChange={v=>nested("drink","milk",v)}/><label>Other details<input value={selected.drink?.mod||""} onChange={e=>nested("drink","mod",e.target.value)} placeholder="Single origin · decaf · vanilla"/></label><label>Price<input type="number" value={selected.drink?.price||0} onChange={e=>nested("drink","price",Number(e.target.value))}/></label><label className="wide">Tasting note<textarea value={selected.drink?.note||""} onChange={e=>nested("drink","note",e.target.value)}/></label></div>
           <div className="cv2-fields">{isCoffee(selected.drink?.type)&&<label>Espresso shots<select value={selected.drink?.shots||""} onChange={e=>nested("drink","shots",e.target.value)}><option value="">Not specified / not applicable</option><option value="1">Single shot</option><option value="2">Double shot</option><option value="3">Triple shot</option></select></label>}<label>Serving<select value={selected.drink?.temp||""} onChange={e=>nested("drink","temp",e.target.value)}><option value="">Not specified</option><option>Hot</option><option>Iced</option><option>Cold</option></select></label></div>
           <CategoryPhoto kind="drink" category={selected.drink} uploading={uploading} onUpload={e=>uploadCategory(e,"drink")} onRemove={()=>nested("drink","photo","")}/>
           <div className="cv2-ratings">{DRINK_CRITERIA.map(label=><RatingSlider key={label} label={label} value={selected.drink?.ratings?.[label]} onChange={v=>rate("drink",label,v)}/>)}</div>
