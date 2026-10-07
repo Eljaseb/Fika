@@ -1,3 +1,4 @@
+import {DRINKS,PASTRIES,TAGS,tagLabel,criterionLabel,foodEmoji,isCoffee,tastingMeta} from "./tasting.js";
 
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import "./creator-v2.css";
@@ -36,7 +37,7 @@ function newCafe(catalogCafe){
 
 function RatingSlider({label,value,onChange}){
   const n=Number(value)||0;
-  return <label className="cv2-rating"><span>{label}</span><input type="range" min="0" max="5" step=".5" value={n} onChange={e=>onChange(Number(e.target.value))}/><b>{n?n.toFixed(1):"–"}</b></label>;
+  return <label className="cv2-rating"><span>{criterionLabel(label)}</span><input type="range" min="0" max="5" step=".5" value={n} onChange={e=>onChange(Number(e.target.value))}/><b>{n?n.toFixed(1):"–"}</b></label>;
 }
 
 function coverPlacement(bitmap,targetW,targetH,zoom=1,xShift=0,yShift=0){
@@ -78,7 +79,7 @@ async function renderCard(cafe,format,raw=false){
   pill([cafe.city,cafe.country].filter(Boolean).join(", "),p,35,"#211c19bb","#fffaf2",24,560);
   const r=104,bx=W-p-r,by=heroH-r-26;
   ctx.fillStyle="#fffaf2";ctx.beginPath();ctx.arc(bx,by,r,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#bc914d";ctx.lineWidth=6;ctx.stroke();
-  ctx.textAlign="center";ctx.fillStyle="#432618";ctx.font="bold 84px Georgia";ctx.fillText(score10(cafe),bx,by+15);ctx.font="bold 20px Arial";ctx.fillText("FIKA SCORE",bx,by+55);ctx.textAlign="left";
+  ctx.textAlign="center";ctx.fillStyle="#432618";ctx.font="bold 84px Georgia";ctx.fillText(cafe.itemCategory?category10(cafe.itemCategory):score10(cafe),bx,by+15);ctx.font="bold 20px Arial";ctx.fillText(cafe.itemCategory?(cafe.cardKind==="drink"?"DRINK / 10":"PASTRY / 10"):"FIKA SCORE",bx,by+55);ctx.textAlign="left";
   const bottom=H-118,available=bottom-heroH-36;
   // Fit typography at full card width; never shrink the whole text block into the centre.
   const drawBody=(scale,paint)=>{
@@ -88,15 +89,27 @@ async function renderCard(cafe,format,raw=false){
     const title=wrap(ctx,cafe.name,W-p*2,2);
     for(const line of title){text(line,ctx.font,"#2c211b",p,y,W-p*2);y+=(story?104:92)*scale}
     y-=25*scale;
+    if(cafe.itemCategory){
+      const item=cafe.itemCategory;
+      text(cafe.cafeName,`bold ${32*scale}px Arial`,"#9c683d",p,y,W-p*2);y+=40*scale;
+      const meta=tastingMeta(item);if(meta){text(meta,`${26*scale}px Arial`,"#72604e",p,y,W-p*2);y+=40*scale}
+      text("TASTING DETAILS · OUT OF 5",`bold ${24*scale}px Arial`,"#9c683d",p,y,W-p*2);y+=18*scale;
+      for(const [label,value] of Object.entries(item.ratings||{})){
+        y+=48*scale;text(criterionLabel(label),`bold ${32*scale}px Arial`,"#432618",p,y,W-p*2-180);
+        ctx.textAlign="right";text(Number(value)>0?Number(value).toFixed(1)+" / 5":"—",`bold ${34*scale}px Georgia`,"#b3553b",W-p,y,160);ctx.textAlign="left";
+      }
+      if(item.note){y+=50*scale;ctx.font=`bold ${32*scale}px Georgia`;for(const line of wrap(ctx,item.note,W-p*2,story?4:3)){text(line,ctx.font,"#432618",p,y,W-p*2);y+=40*scale}}
+      return y-heroH;
+    }
     if(score(cafe)>=80){if(paint)pill("WORTH THE TRIP",p,y,"#5d744f","white",22*scale,320);y+=65*scale}
-    const tags=(cafe.bestFor||[]).slice(0,3).join("  ·  ");
+    const tags=(cafe.bestFor||[]).slice(0,3).map(tagLabel).join("  ·  ");
     if(tags){y+=22*scale;text(tags,`bold ${25*scale}px Arial`,"#80634c",p,y,W-p*2);y+=26*scale}
     y+=22*scale;
     if(cafe.drink?.type||cafe.pastry?.type){text("THE TASTING",`bold ${23*scale}px Arial`,"#9c683d",p,y,W-p*2);y+=22*scale}
     for(const [label,category] of [["COFFEE",cafe.drink],["PASTRY",cafe.pastry]]){
       if(!category?.type)continue;
       y+=(story?42:36)*scale;
-      text(category.type,`bold ${(story?46:40)*scale}px Georgia`,"#2c211b",p,y,W-p*2-160);
+      text(foodEmoji(category.type,label==="PASTRY"?"pastry":"drink")+" "+category.type,`bold ${(story?46:40)*scale}px Georgia`,"#2c211b",p,y,W-p*2-160);
       ctx.textAlign="right";text(category10(category),`bold ${48*scale}px Georgia`,"#b3553b",W-p,y,130);ctx.textAlign="left";
       const note=category.note||category.mod||category.subtype;
       if(note){y+=34*scale;text(wrap(Object.assign(ctx,{font:`${28*scale}px Arial`}),note,W-p*2,1)[0],ctx.font,"#72604e",p,y,W-p*2)}
@@ -113,8 +126,19 @@ async function renderCard(cafe,format,raw=false){
   const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",.95));if(!blob)throw new Error("card_failed");return blob;
 }
 function caption(cafe){
+  if(cafe.itemCategory)return [cafe.name+" · "+cafe.cafeName,"Score: "+category10(cafe.itemCategory)+"/10",tastingMeta(cafe.itemCategory),cafe.itemCategory.note||"",...Object.entries(cafe.itemCategory.ratings||{}).map(([label,v])=>criterionLabel(label)+": "+(Number(v)>0?v+"/5":"Not rated")),"#WorthTheFika #Fika"].join("\n");
   const tags=(cafe.bestFor||[]).slice(0,4).map(x=>"#"+String(x).replace(/[^a-z0-9]+/gi,"")).filter(Boolean).join(" ");
   return [cafe.name+" · "+(cafe.city||""),"Worth the Fika score: "+score(cafe)+"/100",cafe.take||cafe.reason||"",cafe.drink?.type?"☕ "+cafe.drink.type:"",cafe.pastry?.type?"🥐 "+cafe.pastry.type:"","",tags+" #WorthTheFika #Fika"].join("\n");
+}
+
+function TypePicker({kind,value,onChange}){
+  const options=kind==="drink"?DRINKS:PASTRIES;
+  const match=options.find(x=>x.toLowerCase()===value.toLowerCase());
+  const [custom,setCustom]=useState(Boolean(value&&!match));
+  return <><label>{kind==="drink"?"Drink type":"Pastry type"}<select value={custom?"custom":match||""} onChange={e=>{setCustom(e.target.value==="custom");onChange(e.target.value==="custom"?"":e.target.value)}}><option value="">Choose a {kind}</option>{options.map(o=><option key={o}>{o}</option>)}<option value="custom">＋ Other / custom {kind}</option></select></label>{custom&&<label>Custom {kind} name<input value={value} onChange={e=>onChange(e.target.value)} placeholder={kind==="drink"?"Your own drink":"Your own pastry"}/></label>}</>;
+}
+function CategoryPhoto({kind,category,uploading,onUpload,onRemove}){
+  return <div className="cv2-category-photo">{category?.photo&&<img src={category.photo} alt={kind+" photo"}/>}<div><b>{foodEmoji(category?.type,kind)} {kind==="drink"?"Drink":"Pastry"} card photo</b><label><input type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" disabled={uploading} onChange={onUpload}/>{uploading?"Uploading…":"Choose a photo"}</label>{category?.photo&&<button disabled={uploading} onClick={onRemove}>Remove photo</button>}</div></div>;
 }
 
 function CardPreview({cafe,format,onTransform,onStatus}){
@@ -182,8 +206,14 @@ export default function CreatorStudioV2(){
   const [status,setStatus]=useState("");
   const [uploading,setUploading]=useState(false);
   const [format,setFormat]=useState("post");
+  const [cardKind,setCardKind]=useState("cafe");
   const selected=useMemo(()=>cafes.find(c=>String(c.id)===String(selectedId))||cafes[0],[cafes,selectedId]);
 
+  const cardCafe=useMemo(()=>{
+    if(!selected||cardKind==="cafe")return selected;
+    const item=selected[cardKind]||{};
+    return {...selected,name:foodEmoji(item.type,cardKind)+" "+(item.type||cardKind),cafeName:selected.name,cardKind,itemCategory:item,imgs:item.photo?[item.photo]:[],cardZoom:item.cardZoom||1,cardX:item.cardX||0,cardY:item.cardY||0,cardRotation:item.cardRotation||0};
+  },[selected,cardKind]);
   useEffect(()=>{let cancelled=false;sessionStorage.removeItem("wtfika:admin");fetch("/api/admin-check",{credentials:"same-origin",cache:"no-store"}).then(r=>{if(!cancelled)setReady(r.ok)}).catch(()=>{}).finally(()=>{if(!cancelled)setCheckingSession(false)});return()=>{cancelled=true}},[]);
 
   useEffect(()=>{
@@ -236,10 +266,10 @@ export default function CreatorStudioV2(){
 
   function add(customCatalog){
     if(customCatalog){const existing=cafes.find(c=>c.catalogId===customCatalog.id||normalize(c.name)===normalize(customCatalog.name));if(existing){openReview(existing);return}}
-    setView("editor");setSearch("");const c=newCafe(customCatalog);setCafes(list=>[c,...list]);setSelectedId(c.id);setTab("review");setStatus(customCatalog?"Shortlist café loaded":"New review ready");
+    setCardKind("cafe");setView("editor");setSearch("");const c=newCafe(customCatalog);setCafes(list=>[c,...list]);setSelectedId(c.id);setTab("review");setStatus(customCatalog?"Shortlist café loaded":"New review ready");
   }
 
-  function openReview(c){setSelectedId(c.id);setTab("review");setView("editor");window.scrollTo(0,0)}
+  function openReview(c){setCardKind("cafe");setSelectedId(c.id);setTab("review");setView("editor");window.scrollTo(0,0)}
   async function manageReview(action){
     if(action==="remove"){
       if(!window.confirm(`Remove ${selected.name} and its saved draft? This also removes its published review. The Top 50 listing stays.`))return;
@@ -269,6 +299,11 @@ export default function CreatorStudioV2(){
       if(action==="remove"||action==="unpublish")setPublished(v=>{const next={...v};delete next[cafe.id];return next});
       setUndo(null);setStatus(action==="save"?"Draft saved privately ✓":action==="publish"?"This café is now published ✓":action==="unpublish"?"Unpublished · private draft kept":"Review removed");return true;
     }catch(e){if(e.message==="unauthorized")setReady(false);setStatus(e.message==="unauthorized"?"Please sign in again. Your inputs are still here.":e.message);return false}finally{setPublishing(false)}
+  }
+  async function uploadCategory(event,kind){
+    const file=event.target.files?.[0];event.target.value="";if(!file)return;
+    setUploading(true);setStatus("Uploading "+kind+" photo…");
+    try{const form=new FormData();form.append("file",file);const r=await fetch("/api/images/upload",{method:"POST",credentials:"same-origin",body:form});const d=await r.json();if(!r.ok)throw new Error(d.error);setCafes(list=>list.map(c=>c.id===selected.id?{...c,[kind]:{...(c[kind]||{}),photo:d.url,cardZoom:1,cardX:0,cardY:0,cardRotation:0}}:c));setStatus("Photo added · save draft to keep it")}catch{setStatus("Photo upload failed. Please try again.")}finally{setUploading(false)}
   }
   async function upload(event){
     const files=Array.from(event.target.files||[]).slice(0,6);event.target.value="";if(!files.length||!selected)return;
@@ -306,7 +341,7 @@ export default function CreatorStudioV2(){
         <button className="cv2-back" onClick={()=>{setView("library");setSearch("")}}>← My reviews</button>
         <div className="cv2-savebar"><div><b>{reviewState(selected)}</b><small>{JSON.stringify(selected)===saved[selected.id]?"Saved":"Unsaved inputs"}</small></div><button disabled={publishing||uploading} onClick={()=>persist("save")}>Save draft</button><button className="primary" disabled={publishing||uploading} onClick={()=>persist("publish")}>Publish café</button></div>
         <div className="cv2-title"><div><p>{selected.visitedOn||"Draft review"}</p><h2>{selected.name}</h2></div><strong>{score(selected)||"–"}<small>/100</small></strong></div>
-        <div className="cv2-review-summary">{cover?<img src={cover} alt={selected.name}/>:<button onClick={()=>setTab("photos")}>＋ Add a cover photo</button>}<div><p>{selected.city} · {selected.catalogId?"Top 50 café":"Your discovery"}</p><p>{selected.take||selected.reason||"Add your verdict to bring this review to life."}</p><div className="cv2-summary-scores"><span>Coffee <b>{category10(selected.drink)}/10</b></span><span>Pastry <b>{category10(selected.pastry)}/10</b></span></div></div></div>
+        <div className="cv2-review-summary">{cover?<img src={cover} alt={selected.name}/>:<button onClick={()=>setTab("photos")}>＋ Add a cover photo</button>}<div><p>{selected.city} · {selected.catalogId?"Top 50 café":"Your discovery"}</p><p>{selected.take||selected.reason||"Add your verdict to bring this review to life."}</p><div className="cv2-summary-scores"><span>Drink <b>{category10(selected.drink)}/10</b></span><span>Pastry <b>{category10(selected.pastry)}/10</b></span></div></div></div>
         <details className="cv2-manage"><summary>Manage this review</summary><p>Reset clears the draft’s ratings, notes and photos. Remove deletes the draft and published review. Unpublish keeps a private draft.</p><button onClick={()=>manageReview("reset")}>Reset review data</button><button disabled={publishing} onClick={()=>manageReview("remove")}>Remove review</button>{published[selected.id]&&<button disabled={publishing} onClick={()=>{if(window.confirm("Remove this review from the public guide and keep it as a private draft?"))persist("unpublish")}}>Unpublish café</button>}</details>
         <div className="cv2-tabs"><button className={tab==="review"?"active":""} onClick={()=>setTab("review")}>1 · Review</button><button className={tab==="photos"?"active":""} onClick={()=>setTab("photos")}>2 · Photos ({photos.length})</button><button className={tab==="social"?"active":""} onClick={()=>setTab("social")}>3 · Instagram</button></div>
 
@@ -323,12 +358,16 @@ export default function CreatorStudioV2(){
             <label className="wide">Best for<input value={(selected.bestFor||[]).join(", ")} onChange={e=>patch("bestFor",e.target.value.split(",").map(x=>x.trim()).filter(Boolean))} placeholder="Cozy solo, Friends, Date, Laptop work"/></label>
           </div>
 
+          <div className="cv2-tag-picks">{TAGS.map(tag=><button key={tag} aria-pressed={(selected.bestFor||[]).includes(tag)} onClick={()=>patch("bestFor",(selected.bestFor||[]).includes(tag)?selected.bestFor.filter(t=>t!==tag):[...(selected.bestFor||[]),tag])}>{tagLabel(tag)}</button>)}</div>
           <div className="section-head divided"><div><p className="cv2-eyebrow">The cup</p><h3>Drink</h3></div><span>0 means not tasted.</span></div>
-          <div className="cv2-fields"><label>Drink<input value={selected.drink?.type||""} onChange={e=>nested("drink","type",e.target.value)} placeholder="Flat white"/></label><label>Detail<input value={selected.drink?.mod||""} onChange={e=>nested("drink","mod",e.target.value)} placeholder="Oat · single origin"/></label><label>Price<input type="number" value={selected.drink?.price||0} onChange={e=>nested("drink","price",Number(e.target.value))}/></label><label className="wide">Tasting note<textarea value={selected.drink?.note||""} onChange={e=>nested("drink","note",e.target.value)}/></label></div>
+          <div className="cv2-fields"><TypePicker key={selected.id+"drink"} kind="drink" value={selected.drink?.type||""} onChange={v=>{nested("drink","type",v);if(!isCoffee(v))nested("drink","shots","")}}/><label>Detail<input value={selected.drink?.mod||""} onChange={e=>nested("drink","mod",e.target.value)} placeholder="Oat · single origin"/></label><label>Price<input type="number" value={selected.drink?.price||0} onChange={e=>nested("drink","price",Number(e.target.value))}/></label><label className="wide">Tasting note<textarea value={selected.drink?.note||""} onChange={e=>nested("drink","note",e.target.value)}/></label></div>
+          <div className="cv2-fields">{isCoffee(selected.drink?.type)&&<label>Espresso shots<select value={selected.drink?.shots||""} onChange={e=>nested("drink","shots",e.target.value)}><option value="">Not specified / not applicable</option><option value="1">Single shot</option><option value="2">Double shot</option><option value="3">Triple shot</option></select></label>}<label>Serving<select value={selected.drink?.temp||""} onChange={e=>nested("drink","temp",e.target.value)}><option value="">Not specified</option><option>Hot</option><option>Iced</option><option>Cold</option></select></label></div>
+          <CategoryPhoto kind="drink" category={selected.drink} uploading={uploading} onUpload={e=>uploadCategory(e,"drink")} onRemove={()=>nested("drink","photo","")}/>
           <div className="cv2-ratings">{DRINK_CRITERIA.map(label=><RatingSlider key={label} label={label} value={selected.drink?.ratings?.[label]} onChange={v=>rate("drink",label,v)}/>)}</div>
 
           <div className="section-head divided"><div><p className="cv2-eyebrow">The bite</p><h3>Pastry</h3></div><span>0 means not tasted.</span></div>
-          <div className="cv2-fields"><label>Pastry<input value={selected.pastry?.type||""} onChange={e=>nested("pastry","type",e.target.value)} placeholder="Cardamom bun"/></label><label>Detail<input value={selected.pastry?.subtype||""} onChange={e=>nested("pastry","subtype",e.target.value)}/></label><label>Price<input type="number" value={selected.pastry?.price||0} onChange={e=>nested("pastry","price",Number(e.target.value))}/></label><label className="wide">Tasting note<textarea value={selected.pastry?.note||""} onChange={e=>nested("pastry","note",e.target.value)}/></label></div>
+          <div className="cv2-fields"><TypePicker key={selected.id+"pastry"} kind="pastry" value={selected.pastry?.type||""} onChange={v=>nested("pastry","type",v)}/><label>Detail<input value={selected.pastry?.subtype||""} onChange={e=>nested("pastry","subtype",e.target.value)}/></label><label>Price<input type="number" value={selected.pastry?.price||0} onChange={e=>nested("pastry","price",Number(e.target.value))}/></label><label className="wide">Tasting note<textarea value={selected.pastry?.note||""} onChange={e=>nested("pastry","note",e.target.value)}/></label></div>
+          <CategoryPhoto kind="pastry" category={selected.pastry} uploading={uploading} onUpload={e=>uploadCategory(e,"pastry")} onRemove={()=>nested("pastry","photo","")}/>
           <div className="cv2-ratings">{PASTRY_CRITERIA.map(label=><RatingSlider key={label} label={label} value={selected.pastry?.ratings?.[label]} onChange={v=>rate("pastry",label,v)}/>)}</div>
 
           <div className="section-head divided"><div><p className="cv2-eyebrow">The whole fika</p><h3>Experience</h3></div></div>
@@ -346,11 +385,13 @@ export default function CreatorStudioV2(){
 
         {tab==="social"&&<div className="cv2-card social-card-editor">
           <div className="section-head"><div><p className="cv2-eyebrow">Instagram</p><h3>Your finished Fika card</h3></div><span>Choose a format, frame your photo with your fingers, then download your card.</span></div>
+          <div className="format-toggle card-kind">{[["cafe","🏡 Café card"],["drink","☕ Drink card"],["pastry","🥐 Pastry card"]].map(([kind,label])=><button key={kind} className={cardKind===kind?"active":""} disabled={kind!=="cafe"&&!selected[kind]?.type} onClick={()=>setCardKind(kind)}>{label}</button>)}</div>
+          {cardKind!=="cafe"&&<CategoryPhoto kind={cardKind} category={selected[cardKind]} uploading={uploading} onUpload={e=>uploadCategory(e,cardKind)} onRemove={()=>nested(cardKind,"photo","")}/>}
           <div className="format-toggle"><button className={format==="post"?"active":""} onClick={()=>setFormat("post")}>Post · 1080×1350</button><button className={format==="story"?"active":""} onClick={()=>setFormat("story")}>Story · 1080×1920</button></div>
           <div className="card-edit-grid">
-            <CardPreview cafe={selected} format={format} onStatus={setStatus} onTransform={values=>setCafes(list=>list.map(c=>c.id===selected.id?{...c,...values}:c))}/>
+            <CardPreview key={selected.id+cardKind} cafe={cardCafe} format={format} onStatus={setStatus} onTransform={values=>setCafes(list=>list.map(c=>c.id===selected.id?(cardKind==="cafe"?{...c,...values}:{...c,[cardKind]:{...(c[cardKind]||{}),...values}}):c))}/>
           </div>
-          <div className="caption-panel"><pre>{caption(selected)}</pre><button onClick={async()=>{await navigator.clipboard.writeText(caption(selected));setStatus("Caption copied ✓")}}>Copy caption</button></div>
+          <div className="caption-panel"><pre>{caption(cardCafe)}</pre><button onClick={async()=>{await navigator.clipboard.writeText(caption(cardCafe));setStatus("Caption copied ✓")}}>Copy caption</button></div>
         </div>}
         <footer className="cv2-footer"><span><b>Save draft</b> keeps this café private. <b>Publish café</b> updates only this review.</span><div><button onClick={()=>setTab(tab==="review"?"photos":tab==="photos"?"social":"review")}>{tab==="review"?"Next: photos":tab==="photos"?"Next: Instagram":"Back to review"}</button><button disabled={publishing||uploading} onClick={()=>persist("save")}>Save draft</button><button className="primary" disabled={publishing||uploading} onClick={()=>persist("publish")}>Publish café</button></div></footer>
       </section>

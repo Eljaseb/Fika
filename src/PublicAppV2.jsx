@@ -1,3 +1,4 @@
+import {tagLabel,criterionLabel,foodEmoji,tastingMeta} from "./tasting.js";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet";
 import L from "leaflet";
@@ -342,9 +343,9 @@ function categoryHasData(category) {
   return Boolean(category?.type || category?.note || category?.mod || category?.subtype || categoryAverage(category) > 0);
 }
 
-function TasteRow({emoji,label,title,detail,score}) {
+function TasteRow({emoji,label,title,detail,score,onClick,expanded}) {
   if (!title && !score) return null;
-  return <div className="taste-highlight">
+  return <button type="button" onClick={onClick} aria-expanded={expanded} className="taste-highlight tasting-trigger">
     <div className="taste-icon">{emoji}</div>
     <div className="taste-copy">
       <span className="taste-label">{label}</span>
@@ -352,7 +353,7 @@ function TasteRow({emoji,label,title,detail,score}) {
       {detail && <p>{detail}</p>}
     </div>
     <div className="taste-score"><b>{score || "–"}</b><small>/10</small></div>
-  </div>;
+  </button>;
 }
 
 function CafeLocationMap({cafe,review,city}) {
@@ -390,8 +391,11 @@ function CafeLocationMap({cafe,review,city}) {
 
 function Detail({cafe,review,onClose,city}) {
   const [photoIndex,setPhotoIndex] = useState(0);
+  const [tasting,setTasting]=useState(null);
+  const tastingRef=useRef(null);
+  useEffect(()=>{if(tasting)tastingRef.current?.scrollIntoView?.({behavior:"smooth",block:"nearest"})},[tasting]);
   const touchStartX = useRef(null);
-  useEffect(()=>setPhotoIndex(0),[cafe?.id,review?.id]);
+  useEffect(()=>{setPhotoIndex(0);setTasting(null)},[cafe?.id,review?.id]);
 
   if (!cafe) return null;
 
@@ -434,21 +438,31 @@ function Detail({cafe,review,onClose,city}) {
           <h2>{cafe.name} <span>{review?.country==="Sweden" || city.country==="Sweden" ? "🇸🇪" : "🇩🇰"}</span></h2>
           {review ? <div className="detail-badges">
             {worthTrip && <span className="worth-trip">✓ WORTH THE TRIP</span>}
-            {(review.bestFor || []).slice(0,3).map(tag=><span key={tag}>{tag}</span>)}
+            {(review.bestFor || []).slice(0,3).map(tag=><span key={tag}>{tagLabel(tag)}</span>)}
           </div> : <span className="not-rated-pill">Not rated by Worth the Fika yet</span>}
         </div>
 
         {review ? <>
           <div className="rating-summary">
             <div className="rating-summary-item overall"><span>Overall</span><strong>{score}</strong><small>/10</small></div>
-            {coffeeScore && <div className="rating-summary-item"><span>☕ Coffee</span><strong>{coffeeScore}</strong><small>/10</small></div>}
-            {pastryScore && <div className="rating-summary-item"><span>🥐 Pastry</span><strong>{pastryScore}</strong><small>/10</small></div>}
+            {coffeeScore && <button className="rating-summary-item tasting-trigger" aria-expanded={tasting==="drink"} onClick={()=>setTasting(tasting==="drink"?null:"drink")}><span>{foodEmoji(review.drink?.type)} Drink ↗</span><strong>{coffeeScore}</strong><small>/10</small></button>}
+            {pastryScore && <button className="rating-summary-item tasting-trigger" aria-expanded={tasting==="pastry"} onClick={()=>setTasting(tasting==="pastry"?null:"pastry")}><span>🥐 Pastry ↗</span><strong>{pastryScore}</strong><small>/10</small></button>}
           </div>
           <div className="taste-section">
             <p className="section-label">TASTING HIGHLIGHTS</p>
-            {categoryHasData(review.drink) && <TasteRow emoji="☕" label="Coffee" title={review.drink?.type || "Coffee"} detail={review.drink?.note || review.drink?.mod} score={coffeeScore}/>}
-            {categoryHasData(review.pastry) && <TasteRow emoji="🥐" label="Pastry" title={review.pastry?.type || review.pastry?.subtype || "Pastry"} detail={review.pastry?.note || review.pastry?.subtype} score={pastryScore}/>}
+            {categoryHasData(review.drink) && <TasteRow onClick={()=>setTasting(tasting==="drink"?null:"drink")} expanded={tasting==="drink"} emoji={foodEmoji(review.drink?.type)} label="Drink · tap for details" title={review.drink?.type || "Coffee"} detail={review.drink?.note || review.drink?.mod} score={coffeeScore}/>}
+            {categoryHasData(review.pastry) && <TasteRow onClick={()=>setTasting(tasting==="pastry"?null:"pastry")} expanded={tasting==="pastry"} emoji={foodEmoji(review.pastry?.type,"pastry")} label="Pastry · tap for details" title={review.pastry?.type || review.pastry?.subtype || "Pastry"} detail={review.pastry?.note || review.pastry?.subtype} score={pastryScore}/>}
           </div>
+          {tasting&&<section ref={tastingRef} className="tasting-breakdown" aria-label="Detailed tasting ratings">
+            <h3>{foodEmoji(review[tasting]?.type,tasting)} {review[tasting]?.type|| (tasting==="drink"?"Drink":"Pastry")}</h3>
+            {review[tasting]?.photo&&<img className="tasting-photo" src={review[tasting].photo} alt={review[tasting].type||tasting}/>}
+            <p>{tastingMeta(review[tasting])}</p>
+            {Number(review[tasting]?.price)>0&&<p>Price: {review[tasting].price} {review.country==="Sweden"?"SEK":review.country==="Denmark"?"DKK":"(local currency)"}</p>}
+            {review[tasting]?.note&&<p className="tasting-note">{review[tasting].note}</p>}
+            <p>Individual criteria are scored out of 5.</p>
+            <div className="tasting-criteria">{Object.entries(review[tasting]?.ratings||{}).map(([label,value])=><div key={label}><span>{criterionLabel(label)}</span><meter min="0" max="5" value={Number(value)||0}/><b>{Number(value)>0?Number(value).toFixed(1)+" / 5":"Not rated"}</b></div>)}</div>
+            {!Object.keys(review[tasting]?.ratings||{}).length&&<p>No individual ratings added yet.</p>}
+          </section>}
           {(review.reason || review.take) && <p className="detail-verdict">{review.reason || review.take}</p>}
         </> : <>
           <p className="detail-verdict">{cafe.why}</p>
@@ -646,3 +660,4 @@ export default function PublicAppV2() {
     <ContactModal open={contactOpen} onClose={()=>setContactOpen(false)} city={city}/>
   </div>;
 }
+

@@ -16,6 +16,12 @@ function cleanCategory(value) {
   const v = value && typeof value === "object" ? value : {};
   return {
     type: cleanText(v.type, 100),
+    shots: ["1","2","3"].includes(String(v.shots))?String(v.shots):"",
+    photo: cleanImage(v.photo),
+    cardZoom: Math.max(.7,Math.min(5,Number(v.cardZoom)||1)),
+    cardX: Math.max(-100,Math.min(100,Number(v.cardX)||0)),
+    cardY: Math.max(-100,Math.min(100,Number(v.cardY)||0)),
+    cardRotation: Math.max(-360,Math.min(360,Number(v.cardRotation)||0)),
     mod: cleanText(v.mod, 100),
     subtype: cleanText(v.subtype, 100),
     temp: cleanText(v.temp, 30),
