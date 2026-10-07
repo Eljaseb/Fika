@@ -11,7 +11,7 @@ function score(cafe){const d=avg(Object.values(cafe?.drink?.ratings||{}));const 
 function score10(cafe){const s=score(cafe);return s?(s/10).toFixed(1):"–"}
 function category10(category){const s=avg(Object.values(category?.ratings||{}));return s?(s*2).toFixed(1):"–"}
 function normalize(v=""){return v.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}
-function mark(){return <div className="cv2-mark" style={{background:"#f8f4eb",overflow:"hidden"}}><img src="/icons/fika-icon-v4.svg" alt="Worth the Fika" style={{display:"block",width:"100%",height:"100%",objectFit:"contain"}} /></div>}
+function mark(){return <div className="cv2-mark" style={{background:"#f8f4eb",overflow:"hidden"}}><img src="/icons/fika-admin.svg" alt="Worth the Fika" style={{display:"block",width:"100%",height:"100%",objectFit:"contain"}} /></div>}
 function initials(name){return String(name||"Fika").split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join("").toUpperCase()}
 function blankRatings(list){return Object.fromEntries(list.map(x=>[x,0]))}
 
@@ -188,15 +188,17 @@ export default function CreatorStudioV2(){
   const [cafes,setCafes]=useState([]);
   const [catalog,setCatalog]=useState([]);
   const [selectedId,setSelectedId]=useState(null);
-  const [code,setCode]=useState(()=>sessionStorage.getItem("wtfika:admin")||"");
+  const [code,setCode]=useState("");
   const [ready,setReady]=useState(false);
+  const [remember,setRemember]=useState(true);
+  const [checkingSession,setCheckingSession]=useState(true);
   const [tab,setTab]=useState("review");
   const [status,setStatus]=useState("");
   const [uploading,setUploading]=useState(false);
   const [format,setFormat]=useState("post");
   const selected=useMemo(()=>cafes.find(c=>String(c.id)===String(selectedId))||cafes[0],[cafes,selectedId]);
 
-  useEffect(()=>{const saved=sessionStorage.getItem("wtfika:admin");if(saved)loginWith(saved,false)},[]);
+  useEffect(()=>{let cancelled=false;sessionStorage.removeItem("wtfika:admin");fetch("/api/admin-check",{credentials:"same-origin",cache:"no-store"}).then(r=>{if(!cancelled)setReady(r.ok)}).catch(()=>{}).finally(()=>{if(!cancelled)setCheckingSession(false)});return()=>{cancelled=true}},[]);
 
   useEffect(()=>{
     let cancelled=false;
@@ -229,7 +231,7 @@ export default function CreatorStudioV2(){
 
   async function loginWith(value,show=true){
     setStatus("Checking…");
-    try{const r=await fetch("/api/admin-check",{method:"POST",headers:{"x-admin-code":value}});if(!r.ok)throw new Error();sessionStorage.setItem("wtfika:admin",value);setCode(value);setReady(true);setStatus("")}
+    try{const r=await fetch("/api/admin-check",{method:"POST",credentials:"same-origin",headers:{"x-admin-code":value,"x-remember-device":String(remember)}});if(!r.ok)throw new Error();setCode("");setReady(true);setStatus("")}
     catch{sessionStorage.removeItem("wtfika:admin");setReady(false);setStatus(show?"Wrong admin code":"")}
   }
 
@@ -249,19 +251,20 @@ export default function CreatorStudioV2(){
 
   async function publish(){
     setStatus("Publishing…");
-    try{const r=await fetch(API,{method:"POST",headers:{"content-type":"application/json","x-admin-code":code},body:JSON.stringify({cafes})});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"failed");setStatus("Published ✓");setTimeout(()=>setStatus(""),2500)}
-    catch(e){setStatus(e.message==="unauthorized"?"Wrong admin code":"Publish failed")}
+    try{const r=await fetch(API,{method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},body:JSON.stringify({cafes})});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"failed");setStatus("Published ✓");setTimeout(()=>setStatus(""),2500)}
+    catch(e){if(e.message==="unauthorized")setReady(false);setStatus(e.message==="unauthorized"?"Session expired. Please sign in again.":"Publish failed")}
   }
 
   async function upload(event){
     const files=Array.from(event.target.files||[]).slice(0,6);event.target.value="";if(!files.length||!selected)return;
     setUploading(true);setStatus("Uploading photos…");const urls=[];
-    try{for(const file of files){const form=new FormData();form.append("file",file);const r=await fetch("/api/images/upload",{method:"POST",headers:{"x-admin-code":code},body:form});const d=await r.json();if(!r.ok)throw new Error(d.error);urls.push(d.url)}patch("imgs",[...(selected.imgs||[]),...urls].slice(0,6));setStatus("Photos added · publish to save")}
+    try{for(const file of files){const form=new FormData();form.append("file",file);const r=await fetch("/api/images/upload",{method:"POST",credentials:"same-origin",body:form});const d=await r.json();if(!r.ok)throw new Error(d.error);urls.push(d.url)}patch("imgs",[...(selected.imgs||[]),...urls].slice(0,6));setStatus("Photos added · publish to save")}
     catch{setStatus("Photo upload failed")}
     finally{setUploading(false)}
   }
 
-  if(!ready)return <main className="cv2-login"><form onSubmit={e=>{e.preventDefault();loginWith(code,true)}}>{mark()}<p className="cv2-eyebrow">Private creator studio</p><h1>Rate your next fika.</h1><p>Choose a café from the Copenhagen or Stockholm Top 50, or add your own. Upload photos, score the tasting and create the Instagram post.</p><input type="password" value={code} onChange={e=>setCode(e.target.value)} placeholder="Admin code" autoFocus/>{status&&<small>{status}</small>}<button>Open Creator Studio</button><a href="/">Back to public guide</a></form></main>;
+  if(checkingSession)return <main className="cv2-login"><p>Opening Creator Studio…</p></main>;
+  if(!ready)return <main className="cv2-login"><form onSubmit={e=>{e.preventDefault();loginWith(code,true)}}>{mark()}<p className="cv2-eyebrow">Private creator studio</p><h1>Rate your next fika.</h1><p>Choose a café from the Copenhagen or Stockholm Top 50, or add your own. Upload photos, score the tasting and create the Instagram post.</p><input type="password" value={code} onChange={e=>setCode(e.target.value)} placeholder="Admin code" aria-label="Admin code" name="password" autoComplete="current-password" autoFocus/><label className="cv2-remember"><input type="checkbox" checked={remember} onChange={e=>setRemember(e.target.checked)}/>Remember this device for 90 days</label>{status&&<small>{status}</small>}<button>Open Creator Studio</button><a href="/">Back to public guide</a></form></main>;
 
   if(!selected)return <main className="cv2-empty">{mark()}<h1>No published reviews yet.</h1><p>Start with a researched Copenhagen or Stockholm café, or add a custom place.</p><div className="cv2-empty-actions"><button onClick={()=>add()}>+ Custom café</button>{catalog.slice(0,6).map(item=><button key={item.id} className="secondary-empty" onClick={()=>add(item)}>#{item.rank} · {item.name}</button>)}</div></main>;
 
@@ -270,7 +273,7 @@ export default function CreatorStudioV2(){
   const zoom=Number(selected.cardZoom)||1,x=Number(selected.cardX)||0,y=Number(selected.cardY)||0;
 
   return <main className="cv2-shell">
-    <header className="cv2-header"><div>{mark()}<div><span>CREATOR STUDIO</span><h1>Worth the Fika</h1></div></div><nav><small>{status}</small><a href="/">Public guide</a><button onClick={()=>{sessionStorage.removeItem("wtfika:admin");setReady(false)}}>Log out</button><button className="primary" onClick={publish}>Publish all</button></nav></header>
+    <header className="cv2-header"><div>{mark()}<div><span>CREATOR STUDIO</span><h1>Worth the Fika</h1></div></div><nav><small>{status}</small><a href="/">Public guide</a><button onClick={async()=>{try{const r=await fetch("/api/admin-check",{method:"DELETE",credentials:"same-origin"});if(!r.ok)throw new Error();setCode("");setReady(false);setStatus("")}catch{setStatus("Could not log out. Please try again.")}}}>Log out</button><button className="primary" onClick={publish}>Publish all</button></nav></header>
     <div className="cv2-layout">
       <aside className="cv2-sidebar">
         <button className="new" onClick={()=>add()}>+ New custom café</button>

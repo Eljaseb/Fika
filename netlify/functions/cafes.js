@@ -1,3 +1,4 @@
+import { authorized } from "../lib/admin-session.mjs";
 import { getStore } from "@netlify/blobs";
 
 function json(data, status = 200) {
@@ -76,12 +77,6 @@ function cleanCafe(value, index) {
   };
 }
 
-function timingSafeEqual(a, b) {
-  if (typeof a !== "string" || typeof b !== "string" || a.length !== b.length) return false;
-  let mismatch = 0;
-  for (let i = 0; i < a.length; i += 1) mismatch |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return mismatch === 0;
-}
 
 export default async (req) => {
   const store = getStore("fika");
@@ -100,8 +95,7 @@ export default async (req) => {
   const adminCode = Netlify.env.get("ADMIN_CODE");
   if (!adminCode) return json({ error: "admin_not_configured" }, 503);
 
-  const suppliedCode = req.headers.get("x-admin-code") || "";
-  if (!timingSafeEqual(suppliedCode, adminCode)) return json({ error: "unauthorized" }, 401);
+  if (!authorized(req)) return json({ error: "unauthorized" }, 401);
 
   const length = Number(req.headers.get("content-length") || 0);
   if (length > 800000) return json({ error: "payload_too_large" }, 413);
